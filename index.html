@@ -138,6 +138,52 @@
         #registrantsTable {
             overflow-x: auto;
         }
+        
+        /* Fee Calculator Styles */
+        .calculator-container {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .calculator-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #2c3e50;
+        }
+        .fee-input-group {
+            margin-bottom: 15px;
+        }
+        .fee-input-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+        .fee-input-group input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .fee-result {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+        }
+        .fee-total {
+            font-size: 24px;
+            font-weight: bold;
+            color: #27ae60;
+            margin-top: 10px;
+        }
+        .fee-breakdown {
+            font-size: 14px;
+            color: #7f8c8d;
+            margin-top: 10px;
+        }
         @media (max-width: 768px) {
             .dashboard {
                 grid-template-columns: 1fr;
@@ -163,6 +209,7 @@
         <div class="tab-container">
             <button class="tab-button active" onclick="openTab(event, 'graphsTab')">Graphs</button>
             <button class="tab-button" onclick="openTab(event, 'tableTab')">Registrants</button>
+            <button class="tab-button" onclick="openTab(event, 'calculatorTab')">Fee Calculator</button>
         </div>
         
         <div id="graphsTab" class="tab-content" style="display: block;">
@@ -179,12 +226,55 @@
                     <h2>Registration Timeline</h2>
                     <canvas id="timelineChart"></canvas>
                 </div>
+                <div class="calculator-container">
+                    <div class="calculator-title">Fee Calculator</div>
+                    <div class="fee-input-group">
+                        <label for="ratedFee">Fee per Rated Player ($)</label>
+                        <input type="number" id="ratedFee" value="40" min="0" step="0.01">
+                    </div>
+                    <div class="fee-input-group">
+                        <label for="unratedFee">Fee per Unrated Player ($)</label>
+                        <input type="number" id="unratedFee" value="30" min="0" step="0.01">
+                    </div>
+                    <button class="btn" id="calculateBtn">Calculate Total</button>
+                    
+                    <div class="fee-result">
+                        <div>Based on current registrations:</div>
+                        <div id="ratedCount" class="fee-breakdown">Rated Players: 0</div>
+                        <div id="unratedCount" class="fee-breakdown">Unrated Players: 0</div>
+                        <div id="feeTotal" class="fee-total">$0.00</div>
+                        <div id="feeBreakdown" class="fee-breakdown"></div>
+                    </div>
+                </div>
             </div>
         </div>
         
         <div id="tableTab" class="tab-content">
             <div id="registrantsTable">
                 <!-- Table will be inserted here -->
+            </div>
+        </div>
+        
+        <div id="calculatorTab" class="tab-content">
+            <div class="calculator-container">
+                <div class="calculator-title">Tournament Revenue Calculator</div>
+                <div class="fee-input-group">
+                    <label for="ratedFeeFull">Fee per Rated Player ($)</label>
+                    <input type="number" id="ratedFeeFull" value="40" min="0" step="0.01">
+                </div>
+                <div class="fee-input-group">
+                    <label for="unratedFeeFull">Fee per Unrated Player ($)</label>
+                    <input type="number" id="unratedFeeFull" value="30" min="0" step="0.01">
+                </div>
+                <button class="btn" id="calculateBtnFull">Calculate Total</button>
+                
+                <div class="fee-result">
+                    <div>Based on current registrations:</div>
+                    <div id="ratedCountFull" class="fee-breakdown">Rated Players: 0</div>
+                    <div id="unratedCountFull" class="fee-breakdown">Unrated Players: 0</div>
+                    <div id="feeTotalFull" class="fee-total">$0.00</div>
+                    <div id="feeBreakdownFull" class="fee-breakdown"></div>
+                </div>
             </div>
         </div>
     </div>
@@ -194,6 +284,8 @@
         let registrationData = [];
         let sections = {};
         let registrationTimeline = {};
+        let ratedPlayersCount = 0;
+        let unratedPlayersCount = 0;
         
         // Define chart instances to update later
         let sectionsChart;
@@ -249,6 +341,7 @@
                     updateStats();
                     updateCharts();
                     createRegistrantsTable();
+                    updateFeeCalculator();
                 },
                 error: function(error) {
                     console.error("Error parsing CSV:", error);
@@ -303,6 +396,14 @@
             registrationTimeline = Object.fromEntries(
                 Object.entries(registrationTimeline).sort(([a], [b]) => new Date(a) - new Date(b))
             );
+            
+            // Count rated and unrated players
+            ratedPlayersCount = registrationData.filter(entry => 
+                entry["CFC ID (ONLY if playing in a rated section)"] !== null && 
+                !isNaN(entry["CFC ID (ONLY if playing in a rated section)"])
+            ).length;
+            
+            unratedPlayersCount = registrationData.length - ratedPlayersCount;
         }
         
         // Update stats cards
@@ -315,15 +416,10 @@
             statsContainer.appendChild(totalCard);
             
             // Count players with CFC ID
-            const ratedPlayers = registrationData.filter(entry => 
-                entry["CFC ID (ONLY if playing in a rated section)"] !== null && 
-                !isNaN(entry["CFC ID (ONLY if playing in a rated section)"])
-            ).length;
-            
-            const ratedCard = createStatCard(ratedPlayers, "Rated Players");
+            const ratedCard = createStatCard(ratedPlayersCount, "Rated Players");
             statsContainer.appendChild(ratedCard);
             
-            const unratedCard = createStatCard(registrationData.length - ratedPlayers, "Unrated Players");
+            const unratedCard = createStatCard(unratedPlayersCount, "Unrated Players");
             statsContainer.appendChild(unratedCard);
             
             // Most popular section
@@ -428,20 +524,12 @@
                 ratedChart.destroy();
             }
             
-            // Count players with CFC ID
-            const ratedPlayers = registrationData.filter(entry => 
-                entry["CFC ID (ONLY if playing in a rated section)"] !== null && 
-                !isNaN(entry["CFC ID (ONLY if playing in a rated section)"])
-            ).length;
-            
-            const unratedPlayers = registrationData.length - ratedPlayers;
-            
             ratedChart = new Chart(ctx, {
                 type: 'doughnut',
                 data: {
                     labels: ['Rated Players', 'Unrated Players'],
                     datasets: [{
-                        data: [ratedPlayers, unratedPlayers],
+                        data: [ratedPlayersCount, unratedPlayersCount],
                         backgroundColor: [
                             'rgba(54, 162, 235, 0.7)',
                             'rgba(255, 206, 86, 0.7)'
@@ -640,6 +728,52 @@
             table.appendChild(tbody);
             tableContainer.innerHTML = '';
             tableContainer.appendChild(table);
+        }
+        
+        // Update fee calculator with player counts
+        function updateFeeCalculator() {
+            // Update player counts
+            document.getElementById('ratedCount').textContent = `Rated Players: ${ratedPlayersCount}`;
+            document.getElementById('unratedCount').textContent = `Unrated Players: ${unratedPlayersCount}`;
+            
+            document.getElementById('ratedCountFull').textContent = `Rated Players: ${ratedPlayersCount}`;
+            document.getElementById('unratedCountFull').textContent = `Unrated Players: ${unratedPlayersCount}`;
+            
+            // Attach listeners to calculate buttons
+            document.getElementById('calculateBtn').addEventListener('click', calculateFees);
+            document.getElementById('calculateBtnFull').addEventListener('click', calculateFeesFull);
+            
+            // Initial calculation
+            calculateFees();
+            calculateFeesFull();
+        }
+        
+        // Calculate fees for the small calculator
+        function calculateFees() {
+            const ratedFee = parseFloat(document.getElementById('ratedFee').value) || 0;
+            const unratedFee = parseFloat(document.getElementById('unratedFee').value) || 0;
+            
+            const ratedTotal = ratedPlayersCount * ratedFee;
+            const unratedTotal = unratedPlayersCount * unratedFee;
+            const grandTotal = ratedTotal + unratedTotal;
+            
+            document.getElementById('feeTotal').textContent = `$${grandTotal.toFixed(2)}`;
+            document.getElementById('feeBreakdown').textContent = 
+                `Rated: $${ratedTotal.toFixed(2)} + Unrated: $${unratedTotal.toFixed(2)}`;
+        }
+        
+        // Calculate fees for the full calculator
+        function calculateFeesFull() {
+            const ratedFee = parseFloat(document.getElementById('ratedFeeFull').value) || 0;
+            const unratedFee = parseFloat(document.getElementById('unratedFeeFull').value) || 0;
+            
+            const ratedTotal = ratedPlayersCount * ratedFee;
+            const unratedTotal = unratedPlayersCount * unratedFee;
+            const grandTotal = ratedTotal + unratedTotal;
+            
+            document.getElementById('feeTotalFull').textContent = `$${grandTotal.toFixed(2)}`;
+            document.getElementById('feeBreakdownFull').textContent = 
+                `Rated: $${ratedTotal.toFixed(2)} + Unrated: $${unratedTotal.toFixed(2)}`;
         }
         
         // Tab functionality
