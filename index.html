@@ -909,6 +909,175 @@
             evt.currentTarget.className += ' active';
         }
         
+        function updateTimelineChart() {
+            const ctx = document.getElementById('timelineChart').getContext('2d');
+            
+            // Destroy previous chart if it exists
+            if (timelineChart) {
+                timelineChart.destroy();
+            }
+            
+            // Generate a complete date range to fill in gaps
+            let allDates = [];
+            if (Object.keys(registrationTimeline).length > 0) {
+                // Find min and max dates
+                const minDate = new Date(Math.min(...Object.keys(registrationTimeline).map(d => new Date(d).getTime())));
+                const maxDate = new Date(Math.max(...Object.keys(registrationTimeline).map(d => new Date(d).getTime())));
+                
+                // Create array of all dates in range
+                const currentDate = new Date(minDate);
+                while (currentDate <= maxDate) {
+                    allDates.push(currentDate.toISOString().split('T')[0]);
+                    currentDate.setDate(currentDate.getDate() + 1);
+                }
+            } else {
+                allDates = [];
+            }
+            
+            // Format dates for display (e.g., Feb 15)
+            const formattedDates = allDates.map(dateStr => {
+                const date = new Date(dateStr);
+                return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+            });
+            
+            // Fill in registration counts, using 0 for days with no registrations
+            const registrationCounts = allDates.map(date => registrationTimeline[date] || 0);
+            
+            // Calculate cumulative registrations
+            const cumulativeData = [];
+            let cumulative = 0;
+            for (const count of registrationCounts) {
+                cumulative += count;
+                cumulativeData.push(cumulative);
+            }
+            
+            timelineChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: formattedDates,
+                    datasets: [
+                        {
+                            label: 'Daily Registrations',
+                            data: registrationCounts,
+                            backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                            borderColor: 'rgba(255, 99, 132, 1)',
+                            borderWidth: 2,
+                            tension: 0.1,
+                            yAxisID: 'y',
+                            type: 'bar'
+                        },
+                        {
+                            label: 'Cumulative Registrations',
+                            data: cumulativeData,
+                            backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                            borderColor: 'rgba(54, 162, 235, 1)',
+                            borderWidth: 2,
+                            tension: 0.1,
+                            yAxisID: 'y1',
+                            type: 'line'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Date'
+                            },
+                            ticks: {
+                                maxRotation: 45,
+                                minRotation: 45,
+                                autoSkip: true,
+                                maxTicksLimit: 20
+                            }
+                        },
+                        y: {
+                            type: 'linear',
+                            display: true,
+                            position: 'left',
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Daily Count'
+                            },
+                            suggestedMax: Math.max(...registrationCounts) + 1
+                        },
+                        y1: {
+                            type: 'linear',
+                            display: true,
+                            position: 'right',
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Cumulative Count'
+                            },
+                            grid: {
+                                drawOnChartArea: false
+                            }
+                        }
+                    },
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                title: function(context) {
+                                    return allDates[context[0].dataIndex];
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Add time slider functionality
+            function addTimeSliderToTimelineChart() {
+                // Add a time slider container
+                const chartContainer = document.querySelector('.chart-container:has(#timelineChart)');
+                const sliderContainer = document.createElement('div');
+                sliderContainer.innerHTML = `
+                    <div class="time-slider-container" style="margin-top: 15px; display: flex; align-items: center;">
+                        <input type="range" id="timelineSlider" min="0" max="100" value="100" style="flex-grow: 1; margin-right: 15px;">
+                        <span id="sliderDateDisplay">Full Timeline</span>
+                    </div>
+                `;
+                chartContainer.appendChild(sliderContainer);
+
+                const slider = document.getElementById('timelineSlider');
+                const dateDisplay = document.getElementById('sliderDateDisplay');
+
+                slider.addEventListener('input', function() {
+                    const sliderValue = parseInt(this.value);
+                    const dataLength = formattedDates.length;
+                    
+                    // Calculate the number of data points to show based on slider value
+                    const dataPointsToShow = Math.ceil((sliderValue / 100) * dataLength);
+
+                    // Slice the data
+                    const displayDates = formattedDates.slice(0, dataPointsToShow);
+                    const displayDailyData = registrationCounts.slice(0, dataPointsToShow);
+                    const displayCumulativeData = cumulativeData.slice(0, dataPointsToShow);
+
+                    // Update the chart with sliced data
+                    timelineChart.data.labels = displayDates;
+                    timelineChart.data.datasets[0].data = displayDailyData;
+                    timelineChart.data.datasets[1].data = displayCumulativeData;
+                    timelineChart.update();
+
+                    // Update date display
+                    if (dataPointsToShow === dataLength) {
+                        dateDisplay.textContent = 'Full Timeline';
+                    } else {
+                        const lastDisplayedDate = new Date(allDates[dataPointsToShow - 1]);
+                        dateDisplay.textContent = `Up to ${lastDisplayedDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
+                    }
+                });
+            }
+
+            // Call the time slider function
+            addTimeSliderToTimelineChart();
+        }
+        
         // Initialize the dashboard
         window.onload = init;
     </script>
