@@ -179,13 +179,45 @@
             color: #27ae60;
             margin-top: 10px;
         }
+        .fee-total.negative {
+            color: #e74c3c;
+        }
         .fee-breakdown {
             font-size: 14px;
             color: #7f8c8d;
             margin-top: 10px;
         }
+        .profit-formula {
+            font-size: 16px;
+            font-weight: bold;
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+            display: inline-block;
+        }
+        .formula-variable {
+            font-style: italic;
+            color: #3498db;
+            margin: 0 5px;
+        }
+        .calculator-section-header {
+            margin-top: 30px;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+            color: #2c3e50;
+        }
+        .calculator-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
         @media (max-width: 768px) {
             .dashboard {
+                grid-template-columns: 1fr;
+            }
+            .calculator-grid {
                 grid-template-columns: 1fr;
             }
         }
@@ -209,7 +241,7 @@
         <div class="tab-container">
             <button class="tab-button active" onclick="openTab(event, 'graphsTab')">Graphs</button>
             <button class="tab-button" onclick="openTab(event, 'tableTab')">Registrants</button>
-            <button class="tab-button" onclick="openTab(event, 'calculatorTab')">Fee Calculator</button>
+            <button class="tab-button" onclick="openTab(event, 'calculatorTab')">Revenue & Profit Calculator</button>
         </div>
         
         <div id="graphsTab" class="tab-content" style="display: block;">
@@ -227,7 +259,7 @@
                     <canvas id="timelineChart"></canvas>
                 </div>
                 <div class="calculator-container">
-                    <div class="calculator-title">Fee Calculator</div>
+                    <div class="calculator-title">Quick Fee Calculator</div>
                     <div class="fee-input-group">
                         <label for="ratedFee">Fee per Rated Player ($)</label>
                         <input type="number" id="ratedFee" value="40" min="0" step="0.01">
@@ -257,23 +289,66 @@
         
         <div id="calculatorTab" class="tab-content">
             <div class="calculator-container">
-                <div class="calculator-title">Tournament Revenue Calculator</div>
-                <div class="fee-input-group">
-                    <label for="ratedFeeFull">Fee per Rated Player ($)</label>
-                    <input type="number" id="ratedFeeFull" value="40" min="0" step="0.01">
-                </div>
-                <div class="fee-input-group">
-                    <label for="unratedFeeFull">Fee per Unrated Player ($)</label>
-                    <input type="number" id="unratedFeeFull" value="30" min="0" step="0.01">
-                </div>
-                <button class="btn" id="calculateBtnFull">Calculate Total</button>
+                <div class="calculator-title">Tournament Revenue & Profit Calculator</div>
                 
-                <div class="fee-result">
-                    <div>Based on current registrations:</div>
-                    <div id="ratedCountFull" class="fee-breakdown">Rated Players: 0</div>
-                    <div id="unratedCountFull" class="fee-breakdown">Unrated Players: 0</div>
-                    <div id="feeTotalFull" class="fee-total">$0.00</div>
-                    <div id="feeBreakdownFull" class="fee-breakdown"></div>
+                <h3 class="calculator-section-header">Revenue Calculation</h3>
+                <div class="calculator-grid">
+                    <div>
+                        <div class="fee-input-group">
+                            <label for="ratedFeeCalc">Fee per Rated Player ($)</label>
+                            <input type="number" id="ratedFeeCalc" value="25" min="0" step="0.01">
+                        </div>
+                        <div class="fee-input-group">
+                            <label for="unratedFeeCalc">Fee per Unrated Player ($)</label>
+                            <input type="number" id="unratedFeeCalc" value="20" min="0" step="0.01">
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <div class="fee-result">
+                            <div>Revenue breakdown:</div>
+                            <div id="ratedCountCalc" class="fee-breakdown">Rated Players: 0</div>
+                            <div id="unratedCountCalc" class="fee-breakdown">Unrated Players: 0</div>
+                            <div id="ratedRevenueCalc" class="fee-breakdown">Revenue from rated players: $0.00</div>
+                            <div id="unratedRevenueCalc" class="fee-breakdown">Revenue from unrated players: $0.00</div>
+                            <div id="totalRevenueCalc" class="fee-total">Total Revenue: $0.00</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <h3 class="calculator-section-header">Profit Calculation</h3>
+                <div class="profit-formula">
+                    Profit = Revenue - Expenses
+                </div>
+                
+                <div class="calculator-grid">
+                    <div>
+                        <div class="fee-input-group">
+                            <label for="venueCost">Venue Cost ($)</label>
+                            <input type="number" id="venueCost" value="500" min="0" step="1">
+                        </div>
+                        <div class="fee-input-group">
+                            <label for="prizeCost">Prize Costs ($)</label>
+                            <input type="number" id="prizeCost" value="1000" min="0" step="1">
+                        </div>
+                        <div class="fee-input-group">
+                            <label for="otherCosts">Other Costs ($)</label>
+                            <input type="number" id="otherCosts" value="0" min="0" step="1">
+                        </div>
+                        <button class="btn" id="calculateProfitBtn">Calculate Profit/Loss</button>
+                    </div>
+                    
+                    <div>
+                        <div class="fee-result">
+                            <div>Profit/Loss calculation:</div>
+                            <div id="totalRevenueProfit" class="fee-breakdown">Total Revenue: $0.00</div>
+                            <div id="venueExpense" class="fee-breakdown">Venue expense: $0.00</div>
+                            <div id="prizeExpense" class="fee-breakdown">Prize expense: $0.00</div>
+                            <div id="otherExpense" class="fee-breakdown">Other expenses: $0.00</div>
+                            <div id="totalExpense" class="fee-breakdown">Total expenses: $0.00</div>
+                            <div id="profitTotal" class="fee-total">Profit: $0.00</div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -342,6 +417,7 @@
                     updateCharts();
                     createRegistrantsTable();
                     updateFeeCalculator();
+                    updateProfitCalculator();
                 },
                 error: function(error) {
                     console.error("Error parsing CSV:", error);
@@ -736,16 +812,71 @@
             document.getElementById('ratedCount').textContent = `Rated Players: ${ratedPlayersCount}`;
             document.getElementById('unratedCount').textContent = `Unrated Players: ${unratedPlayersCount}`;
             
-            document.getElementById('ratedCountFull').textContent = `Rated Players: ${ratedPlayersCount}`;
-            document.getElementById('unratedCountFull').textContent = `Unrated Players: ${unratedPlayersCount}`;
-            
             // Attach listeners to calculate buttons
             document.getElementById('calculateBtn').addEventListener('click', calculateFees);
-            document.getElementById('calculateBtnFull').addEventListener('click', calculateFeesFull);
             
             // Initial calculation
             calculateFees();
-            calculateFeesFull();
+        }
+        
+        // Update the profit calculator with player counts
+        function updateProfitCalculator() {
+            // Update player counts
+            document.getElementById('ratedCountCalc').textContent = `Rated Players: ${ratedPlayersCount}`;
+            document.getElementById('unratedCountCalc').textContent = `Unrated Players: ${unratedPlayersCount}`;
+            
+            // Add event listeners for all inputs to recalculate
+            document.getElementById('ratedFeeCalc').addEventListener('input', calculateRevenue);
+            document.getElementById('unratedFeeCalc').addEventListener('input', calculateRevenue);
+            document.getElementById('calculateProfitBtn').addEventListener('click', calculateProfit);
+            
+            // Initial calculations
+            calculateRevenue();
+            calculateProfit();
+        }
+        
+        // Calculate revenue based on player counts and fees
+        function calculateRevenue() {
+            const ratedFee = parseFloat(document.getElementById('ratedFeeCalc').value) || 0;
+            const unratedFee = parseFloat(document.getElementById('unratedFeeCalc').value) || 0;
+            
+            const ratedRevenue = ratedPlayersCount * ratedFee;
+            const unratedRevenue = unratedPlayersCount * unratedFee;
+            const totalRevenue = ratedRevenue + unratedRevenue;
+            
+            document.getElementById('ratedRevenueCalc').textContent = `Revenue from rated players ($${ratedFee} each): $${ratedRevenue.toFixed(2)}`;
+            document.getElementById('unratedRevenueCalc').textContent = `Revenue from unrated players ($${unratedFee} each): $${unratedRevenue.toFixed(2)}`;
+            document.getElementById('totalRevenueCalc').textContent = `Total Revenue: $${totalRevenue.toFixed(2)}`;
+            
+            // Update the revenue in the profit section
+            document.getElementById('totalRevenueProfit').textContent = `Total Revenue: $${totalRevenue.toFixed(2)}`;
+            
+            return totalRevenue;
+        }
+        
+        // Calculate profit based on revenue and expenses
+        function calculateProfit() {
+            const totalRevenue = calculateRevenue();
+            const venueCost = parseFloat(document.getElementById('venueCost').value) || 0;
+            const prizeCost = parseFloat(document.getElementById('prizeCost').value) || 0;
+            const otherCosts = parseFloat(document.getElementById('otherCosts').value) || 0;
+            
+            const totalExpenses = venueCost + prizeCost + otherCosts;
+            const profit = totalRevenue - totalExpenses;
+            
+            document.getElementById('venueExpense').textContent = `Venue expense: $${venueCost.toFixed(2)}`;
+            document.getElementById('prizeExpense').textContent = `Prize expense: $${prizeCost.toFixed(2)}`;
+            document.getElementById('otherExpense').textContent = `Other expenses: $${otherCosts.toFixed(2)}`;
+            document.getElementById('totalExpense').textContent = `Total expenses: $${totalExpenses.toFixed(2)}`;
+            
+            const profitElement = document.getElementById('profitTotal');
+            if (profit >= 0) {
+                profitElement.textContent = `Profit: $${profit.toFixed(2)}`;
+                profitElement.className = 'fee-total';
+            } else {
+                profitElement.textContent = `Loss: $${Math.abs(profit).toFixed(2)}`;
+                profitElement.className = 'fee-total negative';
+            }
         }
         
         // Calculate fees for the small calculator
@@ -759,20 +890,6 @@
             
             document.getElementById('feeTotal').textContent = `$${grandTotal.toFixed(2)}`;
             document.getElementById('feeBreakdown').textContent = 
-                `Rated: $${ratedTotal.toFixed(2)} + Unrated: $${unratedTotal.toFixed(2)}`;
-        }
-        
-        // Calculate fees for the full calculator
-        function calculateFeesFull() {
-            const ratedFee = parseFloat(document.getElementById('ratedFeeFull').value) || 0;
-            const unratedFee = parseFloat(document.getElementById('unratedFeeFull').value) || 0;
-            
-            const ratedTotal = ratedPlayersCount * ratedFee;
-            const unratedTotal = unratedPlayersCount * unratedFee;
-            const grandTotal = ratedTotal + unratedTotal;
-            
-            document.getElementById('feeTotalFull').textContent = `$${grandTotal.toFixed(2)}`;
-            document.getElementById('feeBreakdownFull').textContent = 
                 `Rated: $${ratedTotal.toFixed(2)} + Unrated: $${unratedTotal.toFixed(2)}`;
         }
         
