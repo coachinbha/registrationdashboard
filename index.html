@@ -263,6 +263,15 @@
         #registrantsTable table tr.filtered-out {
             display: none;
         }
+        .time-slider-container {
+            margin-top: 15px; 
+            display: flex; 
+            align-items: center;
+        }
+        #timelineSlider {
+            flex-grow: 1; 
+            margin-right: 15px;
+        }
     </style>
 </head>
 <body>
@@ -299,6 +308,10 @@
                 <div class="chart-container">
                     <h2>Registration Timeline</h2>
                     <canvas id="timelineChart"></canvas>
+                    <div id="timeSliderContainer" class="time-slider-container" style="display: none;">
+                        <input type="range" id="timelineSlider" min="0" max="100" value="100">
+                        <span id="sliderDateDisplay">Full Timeline</span>
+                    </div>
                 </div>
                 <div class="calculator-container">
                     <div class="calculator-title">Quick Fee Calculator</div>
@@ -798,191 +811,227 @@
                     }
                 }
             });
+
+            // Show the time slider container
+            const sliderContainer = document.getElementById('timeSliderContainer');
+            sliderContainer.style.display = 'flex';
+
+            // Set up the time slider
+            const slider = document.getElementById('timelineSlider');
+            const dateDisplay = document.getElementById('sliderDateDisplay');
+
+            slider.addEventListener('input', function() {
+                const sliderValue = parseInt(this.value);
+                const dataLength = formattedDates.length;
+                
+                // Calculate the number of data points to show based on slider value
+                const dataPointsToShow = Math.ceil((sliderValue / 100) * dataLength);
+
+                // Slice the data
+                const displayDates = formattedDates.slice(0, dataPointsToShow);
+                const displayDailyData = registrationCounts.slice(0, dataPointsToShow);
+                const displayCumulativeData = cumulativeData.slice(0, dataPointsToShow);
+
+                // Update the chart with sliced data
+                timelineChart.data.labels = displayDates;
+                timelineChart.data.datasets[0].data = displayDailyData;
+                timelineChart.data.datasets[1].data = displayCumulativeData;
+                timelineChart.update();
+
+                // Update date display
+                if (dataPointsToShow === dataLength) {
+                    dateDisplay.textContent = 'Full Timeline';
+                } else {
+                    const lastDisplayedDate = new Date(allDates[dataPointsToShow - 1]);
+                    dateDisplay.textContent = `Up to ${lastDisplayedDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
+                }
+            });
         }
         
         // Modify createRegistrantsTable function to add filters
-function createRegistrantsTable() {
-    const tableContainer = document.getElementById('registrantsTable');
-    
-    if (registrationData.length === 0) {
-        tableContainer.innerHTML = '<p>No data available.</p>';
-        return;
-    }
-    
-    // Create filter container
-    const filterContainer = document.createElement('div');
-    filterContainer.className = 'table-filter-container';
-    
-    // Search input
-    const searchInput = document.createElement('input');
-    searchInput.type = 'text';
-    searchInput.placeholder = 'Search registrants...';
-    searchInput.className = 'search-input';
-    
-    // Section filter
-    const sectionFilter = document.createElement('select');
-    sectionFilter.className = 'filter-section';
-    const sectionOption = document.createElement('option');
-    sectionOption.value = '';
-    sectionOption.textContent = 'All Sections';
-    sectionFilter.appendChild(sectionOption);
-    
-    // Populate section filter options
-    Object.keys(sections).forEach(section => {
-        const option = document.createElement('option');
-        option.value = section;
-        option.textContent = section;
-        sectionFilter.appendChild(option);
-    });
-    
-    // Rated filter
-    const ratedFilter = document.createElement('select');
-    ratedFilter.className = 'filter-rated';
-    ratedFilter.innerHTML = `
-        <option value="">All Players</option>
-        <option value="rated">Rated Players</option>
-        <option value="unrated">Unrated Players</option>
-    `;
-    
-    // Date range filter
-    const dateFilterContainer = document.createElement('div');
-    dateFilterContainer.className = 'date-filter';
-    dateFilterContainer.innerHTML = `
-        <label>From:</label>
-        <input type="date" id="startDateFilter">
-        <label>To:</label>
-        <input type="date" id="endDateFilter">
-    `;
-    
-    // Add filters to container
-    filterContainer.appendChild(searchInput);
-    filterContainer.appendChild(sectionFilter);
-    filterContainer.appendChild(ratedFilter);
-    filterContainer.appendChild(dateFilterContainer);
-    
-    // Create table
-    const table = document.createElement('table');
-    
-    // Create header row
-    const thead = document.createElement('thead');
-    const headerRow = document.createElement('tr');
-    
-    // Get column headers (assuming first entry has all headers)
-    const headers = Object.keys(registrationData[0]);
-    
-    headers.forEach(header => {
-        const th = document.createElement('th');
-        th.textContent = header;
-        headerRow.appendChild(th);
-    });
-    
-    thead.appendChild(headerRow);
-    table.appendChild(thead);
-    
-    // Create table body
-    const tbody = document.createElement('tbody');
-    
-    registrationData.forEach(entry => {
-        const row = document.createElement('tr');
-        
-        headers.forEach(header => {
-            const td = document.createElement('td');
-            td.textContent = entry[header] !== null ? entry[header] : '';
-            row.appendChild(td);
-        });
-        
-        tbody.appendChild(row);
-    });
-    
-    table.appendChild(tbody);
-    
-    // Clear previous content and add new elements
-    tableContainer.innerHTML = '';
-    tableContainer.appendChild(filterContainer);
-    tableContainer.appendChild(table);
-    
-    // Add filter functionality
-    function applyFilters() {
-        const searchTerm = searchInput.value.toLowerCase();
-        const selectedSection = sectionFilter.value;
-        const ratedStatus = ratedFilter.value;
-        const startDate = new Date(document.getElementById('startDateFilter').value);
-        const endDate = new Date(document.getElementById('endDateFilter').value);
-        
-        const rows = tbody.getElementsByTagName('tr');
-        
-        for (let i = 0; i < rows.length; i++) {
-            const row = rows[i];
-            let showRow = true;
+        function createRegistrantsTable() {
+            const tableContainer = document.getElementById('registrantsTable');
             
-            // Search filter
-            if (searchTerm) {
-                const rowText = row.textContent.toLowerCase();
-                showRow = rowText.includes(searchTerm);
+            if (registrationData.length === 0) {
+                tableContainer.innerHTML = '<p>No data available.</p>';
+                return;
             }
+            
+            // Create filter container
+            const filterContainer = document.createElement('div');
+            filterContainer.className = 'table-filter-container';
+            
+            // Search input
+            const searchInput = document.createElement('input');
+            searchInput.type = 'text';
+            searchInput.placeholder = 'Search registrants...';
+            searchInput.className = 'search-input';
             
             // Section filter
-            if (showRow && selectedSection) {
-                const sectionCell = row.cells[headers.indexOf('What section?')];
-                showRow = !selectedSection || sectionCell.textContent === selectedSection;
-            }
+            const sectionFilter = document.createElement('select');
+            sectionFilter.className = 'filter-section';
+            const sectionOption = document.createElement('option');
+            sectionOption.value = '';
+            sectionOption.textContent = 'All Sections';
+            sectionFilter.appendChild(sectionOption);
+            
+            // Populate section filter options
+            Object.keys(sections).forEach(section => {
+                const option = document.createElement('option');
+                option.value = section;
+                option.textContent = section;
+                sectionFilter.appendChild(option);
+            });
             
             // Rated filter
-            if (showRow && ratedStatus) {
-                const cfcIdCell = row.cells[headers.indexOf('CFC ID (ONLY if playing in a rated section)')];
-                const hasValidCFCId = cfcIdCell.textContent && !isNaN(cfcIdCell.textContent);
+            const ratedFilter = document.createElement('select');
+            ratedFilter.className = 'filter-rated';
+            ratedFilter.innerHTML = `
+                <option value="">All Players</option>
+                <option value="rated">Rated Players</option>
+                <option value="unrated">Unrated Players</option>
+            `;
+            
+            // Date range filter
+            const dateFilterContainer = document.createElement('div');
+            dateFilterContainer.className = 'date-filter';
+            dateFilterContainer.innerHTML = `
+                <label>From:</label>
+                <input type="date" id="startDateFilter">
+                <label>To:</label>
+                <input type="date" id="endDateFilter">
+            `;
+            
+            // Add filters to container
+            filterContainer.appendChild(searchInput);
+            filterContainer.appendChild(sectionFilter);
+            filterContainer.appendChild(ratedFilter);
+            filterContainer.appendChild(dateFilterContainer);
+            
+            // Create table
+            const table = document.createElement('table');
+            
+            // Create header row
+            const thead = document.createElement('thead');
+            const headerRow = document.createElement('tr');
+            
+            // Get column headers (assuming first entry has all headers)
+            const headers = Object.keys(registrationData[0]);
+            
+            headers.forEach(header => {
+                const th = document.createElement('th');
+                th.textContent = header;
+                headerRow.appendChild(th);
+            });
+            
+            thead.appendChild(headerRow);
+            table.appendChild(thead);
+            
+            // Create table body
+            const tbody = document.createElement('tbody');
+            
+            registrationData.forEach(entry => {
+                const row = document.createElement('tr');
                 
-                if (ratedStatus === 'rated') {
-                    showRow = hasValidCFCId;
-                } else if (ratedStatus === 'unrated') {
-                    showRow = !hasValidCFCId;
+                headers.forEach(header => {
+                    const td = document.createElement('td');
+                    td.textContent = entry[header] !== null ? entry[header] : '';
+                    row.appendChild(td);
+                });
+                
+                tbody.appendChild(row);
+            });
+            
+            table.appendChild(tbody);
+            
+            // Clear previous content and add new elements
+            tableContainer.innerHTML = '';
+            tableContainer.appendChild(filterContainer);
+            tableContainer.appendChild(table);
+            
+            // Add filter functionality
+            function applyFilters() {
+                const searchTerm = searchInput.value.toLowerCase();
+                const selectedSection = sectionFilter.value;
+                const ratedStatus = ratedFilter.value;
+                const startDate = new Date(document.getElementById('startDateFilter').value);
+                const endDate = new Date(document.getElementById('endDateFilter').value);
+                
+                const rows = tbody.getElementsByTagName('tr');
+                
+                for (let i = 0; i < rows.length; i++) {
+                    const row = rows[i];
+                    let showRow = true;
+                    
+                    // Search filter
+                    if (searchTerm) {
+                        const rowText = row.textContent.toLowerCase();
+                        showRow = rowText.includes(searchTerm);
+                    }
+                    
+                    // Section filter
+                    if (showRow && selectedSection) {
+                        const sectionCell = row.cells[headers.indexOf('What section?')];
+                        showRow = !selectedSection || sectionCell.textContent === selectedSection;
+                    }
+                    
+                    // Rated filter
+                    if (showRow && ratedStatus) {
+                        const cfcIdCell = row.cells[headers.indexOf('CFC ID (ONLY if playing in a rated section)')];
+                        const hasValidCFCId = cfcIdCell.textContent && !isNaN(cfcIdCell.textContent);
+                        
+                        if (ratedStatus === 'rated') {
+                            showRow = hasValidCFCId;
+                        } else if (ratedStatus === 'unrated') {
+                            showRow = !hasValidCFCId;
+                        }
+                    }
+                    
+                    // Date filter
+                    if (showRow && (startDate.toString() !== 'Invalid Date' || endDate.toString() !== 'Invalid Date')) {
+                        const timestampCell = row.cells[headers.indexOf('Timestamp')];
+                        const rowDate = new Date(timestampCell.textContent);
+                        
+                        if (startDate.toString() !== 'Invalid Date' && rowDate < startDate) {
+                            showRow = false;
+                        }
+                        
+                        if (showRow && endDate.toString() !== 'Invalid Date' && rowDate > endDate) {
+                            showRow = false;
+                        }
+                    }
+                    
+                    // Toggle row visibility
+                    row.style.display = showRow ? '' : 'none';
+                }
+                
+                // Show/hide no results message
+                const visibleRows = Array.from(rows).filter(row => row.style.display !== 'none');
+                const noResultsRow = tbody.querySelector('.no-results-row');
+                
+                if (visibleRows.length === 0) {
+                    if (!noResultsRow) {
+                        const newNoResultsRow = document.createElement('tr');
+                        newNoResultsRow.className = 'no-results-row';
+                        const noResultsCell = document.createElement('td');
+                        noResultsCell.setAttribute('colspan', headers.length);
+                        noResultsCell.className = 'no-results';
+                        noResultsCell.textContent = 'No results found matching your filters.';
+                        newNoResultsRow.appendChild(noResultsCell);
+                        tbody.appendChild(newNoResultsRow);
+                    }
+                } else if (noResultsRow) {
+                    tbody.removeChild(noResultsRow);
                 }
             }
             
-            // Date filter
-            if (showRow && (startDate || endDate)) {
-                const timestampCell = row.cells[headers.indexOf('Timestamp')];
-                const rowDate = new Date(timestampCell.textContent);
-                
-                if (startDate && rowDate < startDate) {
-                    showRow = false;
-                }
-                
-                if (showRow && endDate && rowDate > endDate) {
-                    showRow = false;
-                }
-            }
-            
-            // Toggle row visibility
-            row.style.display = showRow ? '' : 'none';
+            // Add event listeners to filters
+            searchInput.addEventListener('input', applyFilters);
+            sectionFilter.addEventListener('change', applyFilters);
+            ratedFilter.addEventListener('change', applyFilters);
+            document.getElementById('startDateFilter').addEventListener('change', applyFilters);
+            document.getElementById('endDateFilter').addEventListener('change', applyFilters);
         }
-        
-        // Show/hide no results message
-        const visibleRows = Array.from(rows).filter(row => row.style.display !== 'none');
-        if (visibleRows.length === 0) {
-            const noResultsRow = document.createElement('tr');
-            const noResultsCell = document.createElement('td');
-            noResultsCell.setAttribute('colspan', headers.length);
-            noResultsCell.className = 'no-results';
-            noResultsCell.textContent = 'No results found matching your filters.';
-            noResultsRow.appendChild(noResultsCell);
-            tbody.appendChild(noResultsRow);
-        } else {
-            // Remove any existing no results row
-            const existingNoResultsRow = tbody.querySelector('.no-results');
-            if (existingNoResultsRow) {
-                tbody.removeChild(existingNoResultsRow);
-            }
-        }
-    }
-    
-    // Add event listeners to filters
-    searchInput.addEventListener('input', applyFilters);
-    sectionFilter.addEventListener('change', applyFilters);
-    ratedFilter.addEventListener('change', applyFilters);
-    document.getElementById('startDateFilter').addEventListener('change', applyFilters);
-    document.getElementById('endDateFilter').addEventListener('change', applyFilters);
-}
         
         // Update fee calculator with player counts
         function updateFeeCalculator() {
@@ -1085,175 +1134,6 @@ function createRegistrantsTable() {
             
             document.getElementById(tabName).style.display = 'block';
             evt.currentTarget.className += ' active';
-        }
-        
-        function updateTimelineChart() {
-            const ctx = document.getElementById('timelineChart').getContext('2d');
-            
-            // Destroy previous chart if it exists
-            if (timelineChart) {
-                timelineChart.destroy();
-            }
-            
-            // Generate a complete date range to fill in gaps
-            let allDates = [];
-            if (Object.keys(registrationTimeline).length > 0) {
-                // Find min and max dates
-                const minDate = new Date(Math.min(...Object.keys(registrationTimeline).map(d => new Date(d).getTime())));
-                const maxDate = new Date(Math.max(...Object.keys(registrationTimeline).map(d => new Date(d).getTime())));
-                
-                // Create array of all dates in range
-                const currentDate = new Date(minDate);
-                while (currentDate <= maxDate) {
-                    allDates.push(currentDate.toISOString().split('T')[0]);
-                    currentDate.setDate(currentDate.getDate() + 1);
-                }
-            } else {
-                allDates = [];
-            }
-            
-            // Format dates for display (e.g., Feb 15)
-            const formattedDates = allDates.map(dateStr => {
-                const date = new Date(dateStr);
-                return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-            });
-            
-            // Fill in registration counts, using 0 for days with no registrations
-            const registrationCounts = allDates.map(date => registrationTimeline[date] || 0);
-            
-            // Calculate cumulative registrations
-            const cumulativeData = [];
-            let cumulative = 0;
-            for (const count of registrationCounts) {
-                cumulative += count;
-                cumulativeData.push(cumulative);
-            }
-            
-            timelineChart = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: formattedDates,
-                    datasets: [
-                        {
-                            label: 'Daily Registrations',
-                            data: registrationCounts,
-                            backgroundColor: 'rgba(255, 99, 132, 0.2)',
-                            borderColor: 'rgba(255, 99, 132, 1)',
-                            borderWidth: 2,
-                            tension: 0.1,
-                            yAxisID: 'y',
-                            type: 'bar'
-                        },
-                        {
-                            label: 'Cumulative Registrations',
-                            data: cumulativeData,
-                            backgroundColor: 'rgba(54, 162, 235, 0.2)',
-                            borderColor: 'rgba(54, 162, 235, 1)',
-                            borderWidth: 2,
-                            tension: 0.1,
-                            yAxisID: 'y1',
-                            type: 'line'
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    scales: {
-                        x: {
-                            title: {
-                                display: true,
-                                text: 'Date'
-                            },
-                            ticks: {
-                                maxRotation: 45,
-                                minRotation: 45,
-                                autoSkip: true,
-                                maxTicksLimit: 20
-                            }
-                        },
-                        y: {
-                            type: 'linear',
-                            display: true,
-                            position: 'left',
-                            beginAtZero: true,
-                            title: {
-                                display: true,
-                                text: 'Daily Count'
-                            },
-                            suggestedMax: Math.max(...registrationCounts) + 1
-                        },
-                        y1: {
-                            type: 'linear',
-                            display: true,
-                            position: 'right',
-                            beginAtZero: true,
-                            title: {
-                                display: true,
-                                text: 'Cumulative Count'
-                            },
-                            grid: {
-                                drawOnChartArea: false
-                            }
-                        }
-                    },
-                    plugins: {
-                        tooltip: {
-                            callbacks: {
-                                title: function(context) {
-                                    return allDates[context[0].dataIndex];
-                                }
-                            }
-                        }
-                    }
-                }
-            });
-
-            // Add time slider functionality
-            function addTimeSliderToTimelineChart() {
-                // Add a time slider container
-                const chartContainer = document.querySelector('.chart-container:has(#timelineChart)');
-                const sliderContainer = document.createElement('div');
-                sliderContainer.innerHTML = `
-                    <div class="time-slider-container" style="margin-top: 15px; display: flex; align-items: center;">
-                        <input type="range" id="timelineSlider" min="0" max="100" value="100" style="flex-grow: 1; margin-right: 15px;">
-                        <span id="sliderDateDisplay">Full Timeline</span>
-                    </div>
-                `;
-                chartContainer.appendChild(sliderContainer);
-
-                const slider = document.getElementById('timelineSlider');
-                const dateDisplay = document.getElementById('sliderDateDisplay');
-
-                slider.addEventListener('input', function() {
-                    const sliderValue = parseInt(this.value);
-                    const dataLength = formattedDates.length;
-                    
-                    // Calculate the number of data points to show based on slider value
-                    const dataPointsToShow = Math.ceil((sliderValue / 100) * dataLength);
-
-                    // Slice the data
-                    const displayDates = formattedDates.slice(0, dataPointsToShow);
-                    const displayDailyData = registrationCounts.slice(0, dataPointsToShow);
-                    const displayCumulativeData = cumulativeData.slice(0, dataPointsToShow);
-
-                    // Update the chart with sliced data
-                    timelineChart.data.labels = displayDates;
-                    timelineChart.data.datasets[0].data = displayDailyData;
-                    timelineChart.data.datasets[1].data = displayCumulativeData;
-                    timelineChart.update();
-
-                    // Update date display
-                    if (dataPointsToShow === dataLength) {
-                        dateDisplay.textContent = 'Full Timeline';
-                    } else {
-                        const lastDisplayedDate = new Date(allDates[dataPointsToShow - 1]);
-                        dateDisplay.textContent = `Up to ${lastDisplayedDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
-                    }
-                });
-            }
-
-            // Call the time slider function
-            addTimeSliderToTimelineChart();
         }
         
         // Initialize the dashboard
