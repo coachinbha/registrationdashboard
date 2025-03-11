@@ -614,10 +614,13 @@
                 'rgba(153, 102, 255, 0.7)'
             ];
             
+            // Create modified labels with count
+            const labelsWithCount = sectionLabels.map(label => `${label} (${sections[label]})`);
+            
             sectionsChart = new Chart(ctx, {
                 type: 'pie',
                 data: {
-                    labels: sectionLabels,
+                    labels: labelsWithCount,
                     datasets: [{
                         data: sectionData,
                         backgroundColor: backgroundColors,
@@ -633,11 +636,11 @@
                         tooltip: {
                             callbacks: {
                                 label: function(context) {
-                                    const label = context.label || '';
                                     const value = context.raw || 0;
                                     const total = context.dataset.data.reduce((a, b) => a + b, 0);
                                     const percentage = Math.round((value / total) * 100);
-                                    return `${label}: ${value} (${percentage}%)`;
+                                    const originalLabel = sectionLabels[context.dataIndex];
+                                    return `${originalLabel}: ${value} (${percentage}%)`;
                                 }
                             }
                         }
