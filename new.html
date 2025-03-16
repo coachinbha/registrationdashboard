@@ -338,48 +338,53 @@
             document.getElementById('unratedCount').textContent = unrated;
         }
         
-        function createSectionsChart() {
-            // Count by section
-            const sectionCounts = {};
-            registrationData.forEach(row => {
-                const section = row["What section?"];
-                if (section) {
-                    sectionCounts[section] = (sectionCounts[section] || 0) + 1;
-                }
-            });
-            
-            const labels = Object.keys(sectionCounts);
-            const data = Object.values(sectionCounts);
-            
-            // Generate colors
-            const colors = generateColors(labels.length);
-            
-            const ctx = document.getElementById('sectionsChart').getContext('2d');
-            
-            if (charts.sectionsChart) {
-                charts.sectionsChart.destroy();
-            }
-            
-            charts.sectionsChart = new Chart(ctx, {
-                type: 'pie',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        data: data,
-                        backgroundColor: colors,
-                        borderWidth: 1
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    plugins: {
-                        legend: {
-                            position: 'right'
-                        }
-                    }
-                }
-            });
+       function createSectionsChart() {
+    // Count by section
+    const sectionCounts = {};
+    registrationData.forEach(row => {
+        const section = row["What section?"];
+        if (section) {
+            sectionCounts[section] = (sectionCounts[section] || 0) + 1;
         }
+    });
+    
+    const labels = Object.keys(sectionCounts);
+    const data = Object.values(sectionCounts);
+    
+    // Generate colors
+    const colors = generateColors(labels.length);
+    
+    const ctx = document.getElementById('sectionsChart').getContext('2d');
+    
+    if (charts.sectionsChart) {
+        charts.sectionsChart.destroy();
+    }
+    
+    // Create labels with counts in brackets
+    const labelsWithCounts = labels.map((label, index) => {
+        return `${label} (${data[index]})`;
+    });
+    
+    charts.sectionsChart = new Chart(ctx, {
+        type: 'pie',
+        data: {
+            labels: labelsWithCounts,
+            datasets: [{
+                data: data,
+                backgroundColor: colors,
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'right'
+                }
+            }
+        }
+    });
+}
         
         function createRatedUnratedChart() {
             const ratedCount = registrationData.filter(row => 
