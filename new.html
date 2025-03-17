@@ -274,93 +274,98 @@ h1 {
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Tournament Registration Dashboard</h1>
-        
-        <div class="file-input">
-            <input type="file" id="csvFile" accept=".csv">
-            <button onclick="processFile()">Load Data</button>
-        </div>
-        
-        <div class="stats-container">
-            <div class="stat-box">
-                <div class="stat-number" id="totalRegistrants">-</div>
-                <div class="stat-label">Total Registrants</div>
-            </div>
-            <div class="stat-box">
-                <div class="stat-number" id="ratedPlayers">-</div>
-                <div class="stat-label">Rated Players</div>
-            </div>
-            <div class="stat-box">
-                <div class="stat-number" id="unratedPlayers">-</div>
-                <div class="stat-label">Unrated Players</div>
-            </div>
-            <div class="stat-box">
-                <div class="stat-number" id="mostPopular">-</div>
-                <div class="stat-label">Most Popular: Grade 1-5 (Unrated)</div>
-            </div>
-        </div>
-        
-        <div class="tab-container">
-            <div class="tabs">
-                <div class="tab active" onclick="showTab('graphs')">Graphs</div>
-                <div class="tab" onclick="showTab('registrants')">Registrants</div>
-                <div class="tab" onclick="showTab('calculator')">Revenue & Profit Calculator</div>
-            </div>
-            
-            <div id="graphsContent" class="tab-content" style="display: block;">
-                <div class="chart-container">
-                    <div class="chart-box">
-                        <div class="chart-title">Sections Breakdown</div>
-                        <canvas id="sectionsChart"></canvas>
-                    </div>
-                    <div class="chart-box">
-                        <div class="chart-title">Rated vs Unrated Players</div>
-                        <canvas id="ratedUnratedChart"></canvas>
-                    </div>
-                </div>
-                
-                <div class="chart-box">
-                    <div class="chart-title">Registration Timeline</div>
-                    <canvas id="timelineChart"></canvas>
-                </div>
-            </div>
-            
-            <div id="registrantsContent" class="tab-content" style="display: none;">
-                <div style="padding: 20px;">
-                    <h2>Registered Players</h2>
-                    <div class="search-container">
-                        <input type="text" id="searchInput" class="search-input" placeholder="Search by name, section, CFC ID, or email...">
-                        <button class="search-button" onclick="searchRegistrants()">Search</button>
-                        <button class="search-button" onclick="clearSearch()">Clear</button>
-                    </div>
-                    <div id="registrantsList"></div>
-                </div>
-            </div>
-            
-            <div id="calculatorContent" class="tab-content" style="display: none;">
-                <div class="calculator">
-                    <h2>Quick Fee Calculator</h2>
-                    
-                    <label for="ratedFee">Fee per Rated Player ($)</label>
-                    <input type="number" id="ratedFee" value="25">
-                    
-                    <label for="unratedFee">Fee per Unrated Player ($)</label>
-                    <input type="number" id="unratedFee" value="20">
-                    
-                    <button onclick="calculateFees()">Calculate Total</button>
-                    
-                    <div class="result">
-                        <p>Based on current registrations:</p>
-                        <p>Rated Players: <span id="ratedCount">-</span></p>
-                        <p>Unrated Players: <span id="unratedCount">-</span></p>
-                        <p class="total" id="totalRevenue">$0.00</p>
-                        <p class="breakdown" id="revenueBreakdown"></p>
-                    </div>
-                </div>
-            </div>
-        </div>
+  <div class="container">
+    <h1>Tournament Registration Dashboard</h1>
+    
+    <div class="file-input">
+      <input type="file" id="csvFile" accept=".csv">
+      <button onclick="processFile()">Load Data</button>
     </div>
+    
+    <div class="stats-container">
+      <div class="stat-box">
+        <div class="stat-number" id="totalRegistrants">-</div>
+        <div class="stat-label">Total Registrants</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-number" id="ratedPlayers">-</div>
+        <div class="stat-label">Rated Players</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-number" id="unratedPlayers">-</div>
+        <div class="stat-label">Unrated Players</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-number" id="mostPopular">-</div>
+        <div class="stat-label">Most Popular: Grade 1-5 (Unrated)</div>
+      </div>
+    </div>
+    
+    <div class="tab-container">
+      <div class="tabs">
+        <div class="tab active" onclick="showTab('graphs')">Graphs</div>
+        <div class="tab" onclick="showTab('registrants')">Registrants</div>
+        <div class="tab" onclick="showTab('calculator')">Revenue &amp; Profit Calculator</div>
+      </div>
+      
+      <div id="graphsContent" class="tab-content" style="display: block;">
+        <div class="chart-container">
+          <div class="chart-box">
+            <div class="chart-title">Sections Breakdown</div>
+            <canvas id="sectionsChart"></canvas>
+          </div>
+          <div class="chart-box">
+            <div class="chart-title">Rated vs Unrated Players</div>
+            <canvas id="ratedUnratedChart"></canvas>
+          </div>
+        </div>
+        
+        <div class="chart-box">
+          <div class="chart-title">Registration Timeline</div>
+          <canvas id="timelineChart"></canvas>
+        </div>
+      </div>
+      
+      <div id="registrantsContent" class="tab-content" style="display: none;">
+        <div style="padding: 20px;">
+          <h2>Registered Players</h2>
+          <div class="search-container">
+            <input type="text" id="searchInput" class="search-input" placeholder="Search by name, section, CFC ID, or email...">
+            <button class="search-button" onclick="searchRegistrants()">Search</button>
+            <button class="search-button" onclick="clearSearch()">Clear</button>
+          </div>
+          <div id="registrantsList"></div>
+        </div>
+      </div>
+      
+      <!-- Updated Calculator Tab with Expenses Input -->
+      <div id="calculatorContent" class="tab-content" style="display: none;">
+        <div class="calculator">
+          <h2>Quick Fee &amp; Profit Calculator</h2>
+          
+          <label for="ratedFee">Fee per Rated Player ($)</label>
+          <input type="number" id="ratedFee" value="25">
+          
+          <label for="unratedFee">Fee per Unrated Player ($)</label>
+          <input type="number" id="unratedFee" value="20">
+          
+          <!-- New Expense Input Field -->
+          <label for="expensesInput">Total Expenses ($)</label>
+          <input type="number" id="expensesInput" value="0">
+          
+          <button onclick="calculateFees()">Calculate Total</button>
+          
+          <div class="result">
+            <p>Based on current registrations:</p>
+            <p>Rated Players: <span id="ratedCount">-</span></p>
+            <p>Unrated Players: <span id="unratedCount">-</span></p>
+            <p class="total" id="totalRevenue">$0.00</p>
+            <p class="breakdown" id="revenueBreakdown"></p>
+            <!-- New Profit Display -->
+            <p class="total" id="profitDisplay">Profit: $0.00</p>
+          </div>
+        </div>
+      </div>
 
     <script>
         let registrationData = [];
@@ -789,6 +794,38 @@ h1 {
                 });
             });
         }
+        
+        function calculateFees() {
+  const ratedFee = parseFloat(document.getElementById('ratedFee').value) || 0;
+  const unratedFee = parseFloat(document.getElementById('unratedFee').value) || 0;
+  
+  // Calculate counts from registration data
+  const ratedCount = registrationData.filter(row => 
+    row["What section?"] && row["What section?"].includes("Rated")
+  ).length;
+  
+  const unratedCount = registrationData.filter(row => 
+    row["What section?"] && row["What section?"].includes("Unrated")
+  ).length;
+  
+  // Compute revenue from fees
+  const ratedRevenue = ratedCount * ratedFee;
+  const unratedRevenue = unratedCount * unratedFee;
+  const totalRevenue = ratedRevenue + unratedRevenue;
+  
+  // New expense calculation
+  const expenses = parseFloat(document.getElementById('expensesInput').value) || 0;
+  const profit = totalRevenue - expenses;
+  
+  // Update the dashboard display
+  document.getElementById('ratedCount').textContent = ratedCount;
+  document.getElementById('unratedCount').textContent = unratedCount;
+  document.getElementById('totalRevenue').textContent = `$${totalRevenue.toFixed(2)}`;
+  document.getElementById('revenueBreakdown').textContent =
+    `Rated: $${ratedRevenue.toFixed(2)} + Unrated: $${unratedRevenue.toFixed(2)}`;
+  document.getElementById('profitDisplay').textContent = `Profit: $${profit.toFixed(2)}`;
+}
+
         
         function clearSearch() {
             document.getElementById('searchInput').value = '';
