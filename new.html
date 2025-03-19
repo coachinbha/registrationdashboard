@@ -271,6 +271,12 @@ h1 {
   background-color: rgba(255, 235, 59, 0.5);
 }
 
+/* Registration Order Number */
+.order-number {
+  font-weight: bold;
+  color: var(--primary-color);
+}
+
     </style>
 </head>
 <body>
@@ -391,10 +397,38 @@ h1 {
                         row["Players Name (Last name, First name)"].trim() !== ""
                     );
                     
+                    // Sort registrants by timestamp if available
+                    registrationData.sort((a, b) => {
+                        const timeA = new Date(a["Timestamp"] || 0);
+                        const timeB = new Date(b["Timestamp"] || 0);
+                        return timeA - timeB;
+                    });
+                    
+                    // Add registration order property to each entry
+                    registrationData.forEach((row, index) => {
+                        row.registrationOrder = index + 1;
+                    });
+                    
                     filteredData = [...registrationData];
                     updateDashboard();
                 }
             });
+        }
+        
+        // Helper function to add ordinal suffix to numbers (1st, 2nd, 3rd, etc.)
+        function getOrdinalSuffix(num) {
+            const j = num % 10,
+                  k = num % 100;
+            if (j == 1 && k != 11) {
+                return num + "st";
+            }
+            if (j == 2 && k != 12) {
+                return num + "nd";
+            }
+            if (j == 3 && k != 13) {
+                return num + "rd";
+            }
+            return num + "th";
         }
         
         function updateDashboard() {
@@ -637,7 +671,8 @@ h1 {
             // Create table header
             const thead = document.createElement('thead');
             const headerRow = document.createElement('tr');
-            const headers = ['Name', 'Section', 'CFC ID', 'Email', 'Phone'];
+            // Add Registration # and Date/Time columns to headers
+            const headers = ['#', 'Date/Time', 'Name', 'Section', 'CFC ID', 'Email', 'Phone'];
             
             headers.forEach(headerText => {
                 const th = document.createElement('th');
@@ -654,6 +689,23 @@ h1 {
             filteredData.forEach(row => {
                 const tr = document.createElement('tr');
                 
+                // Add Registration Order Number cell
+                const orderNumberTd = document.createElement('td');
+                const orderNumber = row.registrationOrder || 0;
+                orderNumberTd.innerHTML = `<span class="order-number">${getOrdinalSuffix(orderNumber)}</span>`;
+                
+                // Add Date/Time cell
+                const timestampTd = document.createElement('td');
+                if (row["Timestamp"]) {
+                    const timestamp = new Date(row["Timestamp"]);
+                    // Format date as MM/DD/YYYY and time as HH:MM:SS
+                    const dateStr = `${timestamp.getMonth() + 1}/${timestamp.getDate()}/${timestamp.getFullYear()}`;
+                    const timeStr = timestamp.toTimeString().substring(0, 8);
+                    timestampTd.textContent = `${dateStr}\n${timeStr}`;
+                } else {
+                    timestampTd.textContent = '-';
+                }
+                
                 const nameTd = document.createElement('td');
                 nameTd.textContent = row["Players Name (Last name, First name)"];
                 
@@ -669,6 +721,9 @@ h1 {
                 const phoneTd = document.createElement('td');
                 phoneTd.textContent = row["Phone number (optional)"] || '-';
                 
+                // Add all cells in order
+                tr.appendChild(orderNumberTd);
+                tr.appendChild(timestampTd);
                 tr.appendChild(nameTd);
                 tr.appendChild(sectionTd);
                 tr.appendChild(cfcIdTd);
@@ -796,36 +851,35 @@ h1 {
         }
         
         function calculateFees() {
-  const ratedFee = parseFloat(document.getElementById('ratedFee').value) || 0;
-  const unratedFee = parseFloat(document.getElementById('unratedFee').value) || 0;
-  
-  // Calculate counts from registration data
-  const ratedCount = registrationData.filter(row => 
-    row["What section?"] && row["What section?"].includes("Rated")
-  ).length;
-  
-  const unratedCount = registrationData.filter(row => 
-    row["What section?"] && row["What section?"].includes("Unrated")
-  ).length;
-  
-  // Compute revenue from fees
-  const ratedRevenue = ratedCount * ratedFee;
-  const unratedRevenue = unratedCount * unratedFee;
-  const totalRevenue = ratedRevenue + unratedRevenue;
-  
-  // New expense calculation
-  const expenses = parseFloat(document.getElementById('expensesInput').value) || 0;
-  const profit = totalRevenue - expenses;
-  
-  // Update the dashboard display
-  document.getElementById('ratedCount').textContent = ratedCount;
-  document.getElementById('unratedCount').textContent = unratedCount;
-  document.getElementById('totalRevenue').textContent = `$${totalRevenue.toFixed(2)}`;
-  document.getElementById('revenueBreakdown').textContent =
-    `Rated: $${ratedRevenue.toFixed(2)} + Unrated: $${unratedRevenue.toFixed(2)}`;
-  document.getElementById('profitDisplay').textContent = `Profit: $${profit.toFixed(2)}`;
-}
-
+          const ratedFee = parseFloat(document.getElementById('ratedFee').value) || 0;
+          const unratedFee = parseFloat(document.getElementById('unratedFee').value) || 0;
+          
+          // Calculate counts from registration data
+          const ratedCount = registrationData.filter(row => 
+            row["What section?"] && row["What section?"].includes("Rated")
+          ).length;
+          
+          const unratedCount = registrationData.filter(row => 
+            row["What section?"] && row["What section?"].includes("Unrated")
+          ).length;
+          
+          // Compute revenue from fees
+          const ratedRevenue = ratedCount * ratedFee;
+          const unratedRevenue = unratedCount * unratedFee;
+          const totalRevenue = ratedRevenue + unratedRevenue;
+          
+          // New expense calculation
+          const expenses = parseFloat(document.getElementById('expensesInput').value) || 0;
+          const profit = totalRevenue - expenses;
+          
+          // Update the dashboard display
+          document.getElementById('ratedCount').textContent = ratedCount;
+          document.getElementById('unratedCount').textContent = unratedCount;
+          document.getElementById('totalRevenue').textContent = `$${totalRevenue.toFixed(2)}`;
+          document.getElementById('revenueBreakdown').textContent =
+            `Rated: $${ratedRevenue.toFixed(2)} + Unrated: $${unratedRevenue.toFixed(2)}`;
+          document.getElementById('profitDisplay').textContent = `Profit: $${profit.toFixed(2)}`;
+        }
         
         function clearSearch() {
             document.getElementById('searchInput').value = '';
