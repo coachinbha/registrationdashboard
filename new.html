@@ -567,98 +567,115 @@ h1 {
         }
         
         function createTimelineChart() {
-            // Parse dates and group by day
-            const dateMap = {};
-            registrationData.forEach(row => {
-                const timestamp = row["Timestamp"];
-                if (timestamp) {
-                    const date = new Date(timestamp);
-                    const dateKey = date.toISOString().split('T')[0];
-                    dateMap[dateKey] = (dateMap[dateKey] || 0) + 1;
-                }
-            });
-            
-            // Sort dates
-            const dates = Object.keys(dateMap).sort();
-            const counts = dates.map(date => dateMap[date]);
-            
-            // Calculate cumulative registrations
-            let cumulative = 0;
-            const cumulativeCounts = counts.map(count => {
-                cumulative += count;
-                return cumulative;
-            });
-            
-            // Format dates for display
-            const formattedDates = dates.map(dateStr => {
-                const date = new Date(dateStr);
-                return `${date.getMonth() + 1}/${date.getDate()}`;
-            });
-            
-            const ctx = document.getElementById('timelineChart').getContext('2d');
-            
-            if (charts.timelineChart) {
-                charts.timelineChart.destroy();
+    // Parse dates and group by day
+    const dateMap = {};
+    registrationData.forEach(row => {
+        const timestamp = row["Timestamp"];
+        if (timestamp) {
+            // First extract the date part from the timestamp
+            // Assuming format like "3/17/2025 10:47:55"
+            const dateParts = timestamp.split(' ')[0].split('/');
+            if (dateParts.length >= 3) {
+                const month = parseInt(dateParts[0]);
+                const day = parseInt(dateParts[1]);
+                const year = parseInt(dateParts[2]);
+                
+                // Create a date key in format MM/DD/YYYY
+                const dateKey = `${month}/${day}/${year}`;
+                dateMap[dateKey] = (dateMap[dateKey] || 0) + 1;
             }
-            
-            charts.timelineChart = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: formattedDates,
-                    datasets: [
-                        {
-                            label: 'Daily Registrations',
-                            data: counts,
-                            backgroundColor: '#FF8A80',
-                            borderColor: '#FF5252',
-                            borderWidth: 1,
-                            order: 2
-                        },
-                        {
-                            label: 'Cumulative Registrations',
-                            data: cumulativeCounts,
-                            type: 'line',
-                            borderColor: '#2196F3',
-                            backgroundColor: 'rgba(33, 150, 243, 0.1)',
-                            fill: true,
-                            tension: 0.4,
-                            yAxisID: 'y1',
-                            order: 1
-                        }
-                    ]
+        }
+    });
+    
+    // Sort dates
+    const dates = Object.keys(dateMap).sort((a, b) => {
+        const partsA = a.split('/').map(Number);
+        const partsB = b.split('/').map(Number);
+        // Compare years first, then months, then days
+        if (partsA[2] !== partsB[2]) return partsA[2] - partsB[2];
+        if (partsA[0] !== partsB[0]) return partsA[0] - partsB[0];
+        return partsA[1] - partsB[1];
+    });
+    
+    const counts = dates.map(date => dateMap[date]);
+    
+    // Calculate cumulative registrations
+    let cumulative = 0;
+    const cumulativeCounts = counts.map(count => {
+        cumulative += count;
+        return cumulative;
+    });
+    
+    // Format dates for display
+    const formattedDates = dates.map(dateStr => {
+        const parts = dateStr.split('/');
+        return `${parts[0]}/${parts[1]}`;
+    });
+    
+    const ctx = document.getElementById('timelineChart').getContext('2d');
+    
+    if (charts.timelineChart) {
+        charts.timelineChart.destroy();
+    }
+    
+    charts.timelineChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: formattedDates,
+            datasets: [
+                {
+                    label: 'Daily Registrations',
+                    data: counts,
+                    backgroundColor: '#FF8A80',
+                    borderColor: '#FF5252',
+                    borderWidth: 1,
+                    order: 2
                 },
-                options: {
-                    responsive: true,
-                    scales: {
-                        x: {
-                            title: {
-                                display: true,
-                                text: 'Date'
-                            }
-                        },
-                        y: {
-                            title: {
-                                display: true,
-                                text: 'Daily Count'
-                            },
-                            beginAtZero: true,
-                            position: 'left'
-                        },
-                        y1: {
-                            title: {
-                                display: true,
-                                text: 'Cumulative Count'
-                            },
-                            beginAtZero: true,
-                            position: 'right',
-                            grid: {
-                                drawOnChartArea: false
-                            }
-                        }
+                {
+                    label: 'Cumulative Registrations',
+                    data: cumulativeCounts,
+                    type: 'line',
+                    borderColor: '#2196F3',
+                    backgroundColor: 'rgba(33, 150, 243, 0.1)',
+                    fill: true,
+                    tension: 0.4,
+                    yAxisID: 'y1',
+                    order: 1
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Date'
+                    }
+                },
+                y: {
+                    title: {
+                        display: true,
+                        text: 'Daily Count'
+                    },
+                    beginAtZero: true,
+                    position: 'left'
+                },
+                y1: {
+                    title: {
+                        display: true,
+                        text: 'Cumulative Count'
+                    },
+                    beginAtZero: true,
+                    position: 'right',
+                    grid: {
+                        drawOnChartArea: false
                     }
                 }
-            });
+            }
         }
+    });
+}
         
         function updateRegistrantsList() {
             const container = document.getElementById('registrantsList');
