@@ -20,6 +20,8 @@
   --muted-color: #777777;
   --shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
   --transition-speed: 0.3s;
+  --warning-color: #ff9800;
+  --error-color: #f44336;
 }
 
 /* Global Reset and Body Styling */
@@ -387,6 +389,46 @@ h1 {
   font-size: 0.8em;
   padding: 2px 5px;
 }
+
+/* Duplicate Detection Styles */
+.duplicate-warning {
+  background-color: rgba(255, 152, 0, 0.1);
+}
+
+.duplicate-badge {
+  display: inline-block;
+  background-color: var(--warning-color);
+  color: white;
+  font-size: 0.7em;
+  padding: 2px 5px;
+  border-radius: 4px;
+  margin-left: 5px;
+}
+
+.duplicate-group {
+  margin-bottom: 20px;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.duplicate-header {
+  background-color: rgba(255, 152, 0, 0.2);
+  padding: 10px;
+  font-weight: bold;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.duplicate-reason {
+  display: inline-block;
+  background-color: rgba(255, 152, 0, 0.8);
+  color: white;
+  font-size: 0.8em;
+  padding: 3px 6px;
+  border-radius: 4px;
+  margin-left: 8px;
+  font-weight: normal;
+}
     </style>
 </head>
 <body>
@@ -399,26 +441,26 @@ h1 {
     </div>
     
     <div class="date-filter-container">
-  <h3>Filter by Date Range</h3>
-  <div class="date-inputs">
-    <div class="date-input-group">
-      <label for="startDate">Start Date:</label>
-      <input type="date" id="startDate">
+      <h3>Filter by Date Range</h3>
+      <div class="date-inputs">
+        <div class="date-input-group">
+          <label for="startDate">Start Date:</label>
+          <input type="date" id="startDate">
+        </div>
+        <div class="date-input-group">
+          <label for="endDate">End Date:</label>
+          <input type="date" id="endDate">
+        </div>
+        <button class="filter-button" onclick="applyDateFilter()">Apply Filter</button>
+        <button class="filter-button secondary" onclick="resetDateFilter()">Reset</button>
+      </div>
+      <div class="date-slider-container">
+        <div id="dateRangeDisplay" class="date-range-display">
+          <span id="selectedDateRange">No date filter applied</span>
+        </div>
+        <div id="dateSlider"></div>
+      </div>
     </div>
-    <div class="date-input-group">
-      <label for="endDate">End Date:</label>
-      <input type="date" id="endDate">
-    </div>
-    <button class="filter-button" onclick="applyDateFilter()">Apply Filter</button>
-    <button class="filter-button secondary" onclick="resetDateFilter()">Reset</button>
-  </div>
-  <div class="date-slider-container">
-    <div id="dateRangeDisplay" class="date-range-display">
-      <span id="selectedDateRange">No date filter applied</span>
-    </div>
-    <div id="dateSlider"></div>
-  </div>
-</div>
 
     <div class="stats-container">
       <div class="stat-box">
@@ -434,8 +476,8 @@ h1 {
         <div class="stat-label">Unrated Players</div>
       </div>
       <div class="stat-box">
-        <div class="stat-number" id="mostPopular">-</div>
-        <div class="stat-label">Most Popular: Grade 1-5 (Unrated)</div>
+        <div class="stat-number" id="duplicateCount">-</div>
+        <div class="stat-label">Potential Duplicates</div>
       </div>
     </div>
     
@@ -443,7 +485,8 @@ h1 {
       <div class="tabs">
         <div class="tab active" onclick="showTab('graphs')">Graphs</div>
         <div class="tab" onclick="showTab('registrants')">Registrants</div>
-        <div class="tab" onclick="showTab('calculator')">Revenue &amp; Profit Calculator</div>
+        <div class="tab" onclick="showTab('duplicates')">Duplicates</div>
+        <div class="tab" onclick="showTab('calculator')">Revenue Calculator</div>
       </div>
       
       <div id="graphsContent" class="tab-content" style="display: block;">
@@ -476,7 +519,16 @@ h1 {
         </div>
       </div>
       
-      <!-- Updated Calculator Tab with Expenses Input -->
+      <!-- New Duplicates Tab -->
+      <div id="duplicatesContent" class="tab-content" style="display: none;">
+        <div style="padding: 20px;">
+          <h2>Potential Duplicate Registrations</h2>
+          <p>The following players appear to have multiple registrations based on matching or similar information.</p>
+          <div id="duplicatesList"></div>
+        </div>
+      </div>
+      
+      <!-- Calculator Tab -->
       <div id="calculatorContent" class="tab-content" style="display: none;">
         <div class="calculator">
           <h2>Quick Fee &amp; Profit Calculator</h2>
@@ -487,7 +539,6 @@ h1 {
           <label for="unratedFee">Fee per Unrated Player ($)</label>
           <input type="number" id="unratedFee" value="20">
           
-          <!-- New Expense Input Field -->
           <label for="expensesInput">Total Expenses ($)</label>
           <input type="number" id="expensesInput" value="0">
           
@@ -499,11 +550,12 @@ h1 {
             <p>Unrated Players: <span id="unratedCount">-</span></p>
             <p class="total" id="totalRevenue">$0.00</p>
             <p class="breakdown" id="revenueBreakdown"></p>
-            <!-- New Profit Display -->
             <p class="total" id="profitDisplay">Profit: $0.00</p>
           </div>
         </div>
       </div>
+    </div>
+  </div>
 
     <script>
         let registrationData = [];
@@ -511,6 +563,7 @@ let charts = {};
 let filteredData = [];
 let dateSlider;
 let minDate, maxDate;
+let duplicateGroups = []; // Store groups of duplicate registrations
 
 function processFile() {
     const fileInput = document.getElementById('csvFile');
@@ -544,6 +597,10 @@ function processFile() {
             });
             
             filteredData = [...registrationData];
+            
+            // Detect duplicates immediately after loading data
+            detectDuplicates();
+            
             updateDashboard();
             initializeDateSlider();
         }
@@ -621,6 +678,280 @@ function initializeDateSlider() {
     updateDateRangeDisplay(minDate, maxDate);
 }
 
+// Duplicate Detection Functions
+function detectDuplicates() {
+    if (!registrationData.length) return;
+    
+    duplicateGroups = [];
+    const processed = new Set(); // Track already processed registrations
+    
+    // First check for exact matches on CFC ID (for rated players)
+    const cfcIdGroups = groupBy(registrationData, row => {
+        const cfcId = (row["CFC ID (ONLY if playing in a rated section)"] || "").trim();
+        return cfcId ? cfcId : null; // Only group non-empty CFC IDs
+    });
+    
+    // Create duplicate groups from CFC ID matches
+    for (const [cfcId, registrations] of Object.entries(cfcIdGroups)) {
+        if (cfcId !== "null" && registrations.length > 1) {
+            duplicateGroups.push({
+                reason: "Same CFC ID",
+                registrations: registrations
+            });
+            
+            // Mark these registrations as processed
+            registrations.forEach(reg => processed.add(reg.registrationOrder));
+        }
+    }
+    
+    // Then check for exact matches on email
+    const emailGroups = groupBy(registrationData, row => {
+        // Skip if already part of a duplicate group
+        if (processed.has(row.registrationOrder)) return null;
+        
+        const email = (row["Email address (For contact)"] || "").trim().toLowerCase();
+        return email ? email : null;
+    });
+    
+    // Create duplicate groups from email matches
+    for (const [email, registrations] of Object.entries(emailGroups)) {
+        if (email !== "null" && registrations.length > 1) {
+            duplicateGroups.push({
+                reason: "Same Email",
+                registrations: registrations
+            });
+            
+            // Mark these registrations as processed
+            registrations.forEach(reg => processed.add(reg.registrationOrder));
+        }
+    }
+    
+    // Finally, check for similar names for any remaining registrations
+    const remainingRegistrations = registrationData.filter(reg => !processed.has(reg.registrationOrder));
+    
+    for (let i = 0; i < remainingRegistrations.length; i++) {
+        const reg1 = remainingRegistrations[i];
+        const name1 = (reg1["Players Name (Last name, First name)"] || "").trim().toLowerCase();
+        
+        if (!name1) continue;
+        
+        // Track potential matches for this registration
+        const matches = [];
+        
+        for (let j = i + 1; j < remainingRegistrations.length; j++) {
+            const reg2 = remainingRegistrations[j];
+            const name2 = (reg2["Players Name (Last name, First name)"] || "").trim().toLowerCase();
+            
+            if (!name2) continue;
+            
+            // Check name similarity
+            const similarity = calculateNameSimilarity(name1, name2);
+            
+            // If names are similar enough, consider it a potential duplicate
+            if (similarity >= 0.8) { // 80% similarity threshold
+                matches.push(reg2);
+            }
+        }
+        
+        // If we found matches, create a duplicate group
+        if (matches.length > 0) {
+            duplicateGroups.push({
+                reason: "Similar Names",
+                registrations: [reg1, ...matches]
+            });
+            
+            // Mark these registrations as processed
+            processed.add(reg1.registrationOrder);
+            matches.forEach(reg => processed.add(reg.registrationOrder));
+        }
+    }
+    
+    // Update duplicate count in the dashboard
+    document.getElementById('duplicateCount').textContent = duplicateGroups.length;
+    
+    // Update the duplicates list
+    updateDuplicatesList();
+    
+    return duplicateGroups;
+}
+
+// Helper function to group registrations by a key
+function groupBy(array, keyFunc) {
+    return array.reduce((result, item) => {
+        const key = keyFunc(item);
+        if (key === null) return result; // Skip null keys
+        
+        if (!result[key]) {
+            result[key] = [];
+        }
+        result[key].push(item);
+        return result;
+    }, {});
+}
+
+// Calculate name similarity (specialized for names)
+function calculateNameSimilarity(name1, name2) {
+    // Simple case: exact match
+    if (name1 === name2) return 1.0;
+    
+    // Clean and normalize names (remove extra spaces, special characters)
+    name1 = name1.replace(/[^\w\s]/g, '').replace(/\s+/g, ' ').trim();
+    name2 = name2.replace(/[^\w\s]/g, '').replace(/\s+/g, ' ').trim();
+    
+    // Split into words to handle cases where names are in different order
+    const words1 = name1.split(' ');
+    const words2 = name2.split(' ');
+    
+    // If one is a subset of the other (e.g., "John Smith" vs "John")
+    if (words1.length !== words2.length) {
+        // Check if all words in the shorter name appear in the longer name
+        const shorter = words1.length < words2.length ? words1 : words2;
+        const longer = words1.length < words2.length ? words2 : words1;
+        
+        const matchCount = shorter.filter(word => 
+            longer.some(w => w.toLowerCase() === word.toLowerCase())
+        ).length;
+        
+        if (matchCount === shorter.length) {
+            // All words in shorter name match
+            return 0.9; // High similarity but not quite exact
+        }
+    }
+    
+    // Advanced: use Levenshtein distance for complex cases
+    return 1 - calculateLevenshteinDistance(name1, name2) / Math.max(name1.length, name2.length);
+}
+
+// Calculate Levenshtein distance
+function calculateLevenshteinDistance(str1, str2) {
+    const m = str1.length;
+    const n = str2.length;
+    
+    // Create the matrix
+    const dp = Array(m + 1).fill().map(() => Array(n + 1).fill(0));
+    
+    // Initialize first row and column
+    for (let i = 0; i <= m; i++) dp[i][0] = i;
+    for (let j = 0; j <= n; j++) dp[0][j] = j;
+    
+    // Fill the matrix
+    for (let i = 1; i <= m; i++) {
+        for (let j = 1; j <= n; j++) {
+            const cost = str1[i - 1] === str2[j - 1] ? 0 : 1;
+            dp[i][j] = Math.min(
+                dp[i - 1][j] + 1,      // deletion
+                dp[i][j - 1] + 1,      // insertion
+                dp[i - 1][j - 1] + cost // substitution
+            );
+        }
+    }
+    
+    return dp[m][n];
+}
+
+// Update the duplicates list display
+function updateDuplicatesList() {
+    const container = document.getElementById('duplicatesList');
+    container.innerHTML = '';
+    
+    if (duplicateGroups.length === 0) {
+        container.innerHTML = '<p>No potential duplicates found.</p>';
+        return;
+    }
+    
+    // For each duplicate group
+    duplicateGroups.forEach((group, groupIndex) => {
+        const groupDiv = document.createElement('div');
+        groupDiv.className = 'duplicate-group';
+        
+        // Create header for this group
+        const header = document.createElement('div');
+        header.className = 'duplicate-header';
+        header.textContent = `Duplicate Group ${groupIndex + 1}`;
+        
+        // Add reason badge
+        const reasonSpan = document.createElement('span');
+        reasonSpan.className = 'duplicate-reason';
+        reasonSpan.textContent = group.reason;
+        header.appendChild(reasonSpan);
+        
+        groupDiv.appendChild(header);
+        
+        // Create table for this group
+        const table = document.createElement('table');
+        table.className = 'registrants-table';
+        
+        // Create table header
+        const thead = document.createElement('thead');
+        const headerRow = document.createElement('tr');
+        const headers = ['#', 'Date/Time', 'Name', 'Section', 'CFC ID', 'Email', 'Phone'];
+        
+        headers.forEach(headerText => {
+            const th = document.createElement('th');
+            th.textContent = headerText;
+            headerRow.appendChild(th);
+        });
+        
+        thead.appendChild(headerRow);
+        table.appendChild(thead);
+        
+        // Create table body
+        const tbody = document.createElement('tbody');
+        
+        group.registrations.forEach(registration => {
+            const tr = document.createElement('tr');
+            tr.className = 'duplicate-warning';
+            
+            // Add Registration Order Number cell
+            const orderNumberTd = document.createElement('td');
+            const orderNumber = registration.registrationOrder || 0;
+            orderNumberTd.innerHTML = `<span class="order-number">${getOrdinalSuffix(orderNumber)}</span>`;
+            
+            // Add Date/Time cell
+            const timestampTd = document.createElement('td');
+            if (registration["Timestamp"]) {
+                const timestamp = new Date(registration["Timestamp"]);
+                // Format date as MM/DD/YYYY and time as HH:MM:SS
+                const dateStr = `${timestamp.getMonth() + 1}/${timestamp.getDate()}/${timestamp.getFullYear()}`;
+                const timeStr = timestamp.toTimeString().substring(0, 8);
+                timestampTd.textContent = `${dateStr}\n${timeStr}`;
+            } else {
+                timestampTd.textContent = '-';
+            }
+            
+            const nameTd = document.createElement('td');
+            nameTd.textContent = registration["Players Name (Last name, First name)"] || '-';
+            
+            const sectionTd = document.createElement('td');
+            sectionTd.textContent = registration["What section?"] || '-';
+            
+            const cfcIdTd = document.createElement('td');
+            cfcIdTd.textContent = registration["CFC ID (ONLY if playing in a rated section)"] || '-';
+            
+            const emailTd = document.createElement('td');
+            emailTd.textContent = registration["Email address (For contact)"] || '-';
+            
+            const phoneTd = document.createElement('td');
+            phoneTd.textContent = registration["Phone number (optional)"] || '-';
+            
+            // Add all cells in order
+            tr.appendChild(orderNumberTd);
+            tr.appendChild(timestampTd);
+            tr.appendChild(nameTd);
+            tr.appendChild(sectionTd);
+            tr.appendChild(cfcIdTd);
+            tr.appendChild(emailTd);
+            tr.appendChild(phoneTd);
+            
+            tbody.appendChild(tr);
+        });
+        
+        table.appendChild(tbody);
+        groupDiv.appendChild(table);
+        container.appendChild(groupDiv);
+    });
+}
+
 function updateDateRangeDisplay(startDate, endDate) {
     const startStr = formatDateForDisplay(startDate);
     const endStr = formatDateForDisplay(endDate);
@@ -690,26 +1021,6 @@ function resetDateFilter() {
     updateDashboard();
 }
 
-// Update the date input fields when the slider changes
-document.addEventListener('DOMContentLoaded', function() {
-    const startDateInput = document.getElementById('startDate');
-    const endDateInput = document.getElementById('endDate');
-    
-    startDateInput.addEventListener('change', function() {
-        if (dateSlider) {
-            const values = dateSlider.get();
-            dateSlider.set([new Date(this.value).getTime(), values[1]]);
-        }
-    });
-    
-    endDateInput.addEventListener('change', function() {
-        if (dateSlider) {
-            const values = dateSlider.get();
-            dateSlider.set([values[0], new Date(this.value).getTime()]);
-        }
-    });
-});
-
 // Helper function to add ordinal suffix to numbers (1st, 2nd, 3rd, etc.)
 function getOrdinalSuffix(num) {
     const j = num % 10,
@@ -769,7 +1080,7 @@ function updateStats() {
     document.getElementById('totalRegistrants').textContent = total;
     document.getElementById('ratedPlayers').textContent = rated;
     document.getElementById('unratedPlayers').textContent = unrated;
-    document.getElementById('mostPopular').textContent = mostPopularCount;
+    document.getElementById('duplicateCount').textContent = duplicateGroups.length;
     
     // Update counts in fee calculator
     document.getElementById('ratedCount').textContent = rated;
@@ -998,13 +1309,33 @@ function updateRegistrantsList() {
     // Create table body
     const tbody = document.createElement('tbody');
     
+    // Create a set of all registration orders that are part of a duplicate group
+    const duplicateOrders = new Set();
+    duplicateGroups.forEach(group => {
+        group.registrations.forEach(reg => {
+            duplicateOrders.add(reg.registrationOrder);
+        });
+    });
+    
     filteredData.forEach(row => {
         const tr = document.createElement('tr');
+        
+        // Check if this row is part of a duplicate pair
+        const isDuplicate = duplicateOrders.has(row.registrationOrder);
+        
+        if (isDuplicate) {
+            tr.className = 'duplicate-warning';
+        }
         
         // Add Registration Order Number cell
         const orderNumberTd = document.createElement('td');
         const orderNumber = row.registrationOrder || 0;
         orderNumberTd.innerHTML = `<span class="order-number">${getOrdinalSuffix(orderNumber)}</span>`;
+        
+        // If this is a duplicate, add a badge
+        if (isDuplicate) {
+            orderNumberTd.innerHTML += `<span class="duplicate-badge">Duplicate</span>`;
+        }
         
         // Add Date/Time cell
         const timestampTd = document.createElement('td');
@@ -1237,8 +1568,6 @@ window.onload = function() {
         }
     });
 };
-        
-        
     </script>
 </body>
 </html>
