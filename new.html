@@ -923,7 +923,7 @@ function updateDuplicatesList() {
             nameTd.textContent = registration["Players Name (Last name, First name)"] || '-';
             
             const sectionTd = document.createElement('td');
-            sectionTd.textContent = registration["What section?"] || '-';
+            sectionTd.textContent = registration["Which section? Note: sections may be combined based upon entries."] || '-';
             
             const cfcIdTd = document.createElement('td');
             cfcIdTd.textContent = registration["CFC ID (ONLY if playing in a rated section)"] || '-';
@@ -1050,10 +1050,10 @@ function updateStats() {
     const total = filteredData.length;
     
     const ratedData = filteredData.filter(row => 
-        row["What section?"] && row["What section?"].includes("Rated")
+        row["Which section? Note: sections may be combined based upon entries."] && row["Which section? Note: sections may be combined based upon entries."].includes("Rated")
     );
     const unratedData = filteredData.filter(row => 
-        row["What section?"] && row["What section?"].includes("Unrated")
+        row["Which section? Note: sections may be combined based upon entries."] && row["Which section? Note: sections may be combined based upon entries."].includes("Unrated")
     );
     
     const rated = ratedData.length;
@@ -1062,7 +1062,7 @@ function updateStats() {
     // Calculate most popular section
     const sectionCounts = {};
     filteredData.forEach(row => {
-        const section = row["What section?"];
+        const section = row["Which section? Note: sections may be combined based upon entries."];
         if (section) {
             sectionCounts[section] = (sectionCounts[section] || 0) + 1;
         }
@@ -1091,7 +1091,7 @@ function createSectionsChart() {
     // Count by section
     const sectionCounts = {};
     filteredData.forEach(row => {
-        const section = row["What section?"];
+        const section = row["Which section? Note: sections may be combined based upon entries."];
         if (section) {
             sectionCounts[section] = (sectionCounts[section] || 0) + 1;
         }
@@ -1137,11 +1137,11 @@ function createSectionsChart() {
 
 function createRatedUnratedChart() {
     const ratedCount = filteredData.filter(row => 
-        row["What section?"] && row["What section?"].includes("Rated")
+        row["Which section? Note: sections may be combined based upon entries."] && row["Which section? Note: sections may be combined based upon entries."].includes("Rated")
     ).length;
     
     const unratedCount = filteredData.filter(row => 
-        row["What section?"] && row["What section?"].includes("Unrated")
+        row["Which section? Note: sections may be combined based upon entries."] && row["Which section? Note: sections may be combined based upon entries."].includes("Unrated")
     ).length;
     
     const ctx = document.getElementById('ratedUnratedChart').getContext('2d');
@@ -1353,7 +1353,7 @@ function updateRegistrantsList() {
         nameTd.textContent = row["Players Name (Last name, First name)"];
         
         const sectionTd = document.createElement('td');
-        sectionTd.textContent = row["What section?"] || '-';
+        sectionTd.textContent = row["Which section? Note: sections may be combined based upon entries."] || '-';
         
         const cfcIdTd = document.createElement('td');
         cfcIdTd.textContent = row["CFC ID (ONLY if playing in a rated section)"] || '-';
@@ -1385,11 +1385,11 @@ function calculateFees() {
     const unratedFee = parseFloat(document.getElementById('unratedFee').value) || 0;
     
     const ratedCount = filteredData.filter(row => 
-        row["What section?"] && row["What section?"].includes("Rated")
+        row["Which section? Note: sections may be combined based upon entries."] && row["Which section? Note: sections may be combined based upon entries."].includes("Rated")
     ).length;
     
     const unratedCount = filteredData.filter(row => 
-        row["What section?"] && row["What section?"].includes("Unrated")
+        row["Which section? Note: sections may be combined based upon entries."] && row["Which section? Note: sections may be combined based upon entries."].includes("Unrated")
     ).length;
     
     const ratedRevenue = ratedCount * ratedFee;
@@ -1458,7 +1458,7 @@ function searchRegistrants() {
     // Filter data based on search term
     filteredData = registrationData.filter(row => {
         const name = (row["Players Name (Last name, First name)"] || "").toLowerCase();
-        const section = (row["What section?"] || "").toLowerCase();
+        const section = (row["Which section? Note: sections may be combined based upon entries."] || "").toLowerCase();
         const cfcId = (row["CFC ID (ONLY if playing in a rated section)"] || "").toLowerCase();
         const email = (row["Email address (For contact)"] || "").toLowerCase();
         const phone = (row["Phone number (optional)"] || "").toLowerCase();
