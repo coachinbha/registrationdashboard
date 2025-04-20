@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Windsor Open Chess Tournament - Registration Tracker</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- Add PapaParse for CSV parsing -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+    <style>
+    :root {
+      --primary-color: #1e88e5;
+      --secondary-color: #43a047;
+      --accent-color: #fbc02d;
+      --background-color: #f0f2f5;
+      --card-background: #ffffff;
+      --text-color: #333333;
+      --muted-color: #777777;
+      --shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      --transition-speed: 0.3s;
+      --warning-color: #ff9800;
+      --error-color: #f44336;
+      --highlight-color: rgba(255, 235, 59, 0.4);
+    }
+    
+    /* Global Reset and Body Styling */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'Roboto', sans-serif;
+      background-color: var(--background-color);
+      color: var(--text-color);
+      line-height: 1.4;
+      padding: 15px;
+    }
+    
+    /* Container */
+    .container {
+      max-width: 960px;
+      margin: 0 auto;
+    }
+    
+    /* Header */
+    h1 {
+      margin-bottom: 15px;
+      font-size: 2em;
+      text-align: center;
+      color: var(--primary-color);
+    }
+    
+    /* Stats Container */
+    .stats-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 15px;
+      margin-bottom: 25px;
+    }
+    
+    .stat-box {
+      background-color: var(--card-background);
+      border-radius: 8px;
+      padding: 15px;
+      text-align: center;
+      box-shadow: var(--shadow);
+      transition: transform var(--transition-speed);
+    }
+    
+    .stat-box:hover {
+      transform: translateY(-3px);
+    }
+    
+    .stat-number {
+      font-size: 2em;
+      font-weight: bold;
+      color: var(--primary-color);
+      margin: 10px 0;
+    }
+    
+    .stat-label {
+      color: var(--muted-color);
+      font-size: 0.85em;
+    }
+    
+    /* Search */
+    .search-container {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+      margin-bottom: 15px;
+    }
+    
+    .search-input {
+      flex-grow: 1;
+      padding: 8px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    
+    .search-button {
+      background-color: var(--primary-color);
+      color: #fff;
+      border: none;
+      padding: 8px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background-color var(--transition-speed);
+    }
+    
+    .search-button:hover {
+      background-color: #1565c0;
+    }
+    
+    /* Registrants Table */
+    .registrants-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    
+    .registrants-table th, 
+    .registrants-table td {
+      padding: 10px;
+      border-bottom: 1px solid #e0e0e0;
+      text-align: left;
+      font-size: 0.9em;
+    }
+    
+    .registrants-table th {
+      background-color: var(--background-color);
+      font-weight: 600;
+      position: sticky;
+      top: 0;
+    }
+    
+    .registrants-table tr:hover {
+      background-color: rgba(30, 136, 229, 0.1);
+    }
+    
+    /* Highlight */
+    .highlight {
+      background-color: var(--highlight-color);
+      padding: 0 2px;
+      border-radius: 2px;
+    }
+    
+    /* File input style */
+    .file-input {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      margin-bottom: 15px;
+      align-items: center;
+    }
+    
+    .file-input input[type="file"] {
+      padding: 6px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      flex-grow: 1;
+      max-width: 300px;
+    }
+
+    /* Action buttons */
+    .action-buttons {
+      display: flex;
+      gap: 15px;
+      margin-bottom: 15px;
+      justify-content: center;
+    }
+    
+    /* Filter options */
+    .filter-options {
+      display: flex;
+      gap: 15px;
+      margin-bottom: 15px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    
+    /* Notification */
+    .notification {
+      padding: 10px 15px;
+      margin: 10px 0;
+      border-radius: 4px;
+      text-align: center;
+      display: none;
+    }
+    
+    .notification.success {
+      background-color: var(--secondary-color);
+      color: white;
+    }
+    
+    .notification.error {
+      background-color: var(--error-color);
+      color: white;
+    }
+
+    .filter-button {
+      background-color: var(--primary-color);
+      color: white;
+      border: none;
+      border-radius: 4px;
+      padding: 6px 12px;
+      cursor: pointer;
+      transition: background-color var(--transition-speed);
+    }
+
+    .filter-button:hover {
+      background-color: #1565c0;
+    }
+
+    .filter-button.active {
+      background-color: var(--secondary-color);
+    }
+
+    .filter-button.secondary {
+      background-color: #9e9e9e;
+    }
+
+    .filter-button.secondary:hover {
+      background-color: #757575;
+    }
+
+    /* Export button */
+    .export-button {
+      background-color: var(--accent-color);
+      color: var(--text-color);
+      border: none;
+      border-radius: 4px;
+      padding: 8px 16px;
+      cursor: pointer;
+      transition: background-color var(--transition-speed);
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .export-button:hover {
+      background-color: #f0b41d;
+    }
+
+    .export-button svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    /* Payment checkbox styling */
+    .payment-checkbox {
+      width: 18px;
+      height: 18px;
+      cursor: pointer;
+    }
+
+    .payment-status {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .paid {
+      color: var(--secondary-color);
+      font-weight: bold;
+    }
+
+    .unpaid {
+      color: var(--error-color);
+    }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Windsor Open Chess Tournament - April 26, 2025</h1>
+        
+        <!-- Notification area -->
+        <div id="notification" class="notification"></div>
+        
+        <!-- Stats -->
+        <div class="stats-container">
+            <div class="stat-box">
+                <div class="stat-label">Total Registrations</div>
+                <div class="stat-number" id="total-registrations">39</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">Paid</div>
+                <div class="stat-number" id="total-paid">0</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">Unpaid</div>
+                <div class="stat-number" id="total-unpaid">39</div>
+            </div>
+        </div>
+        
+        <!-- File Upload Section -->
+        <div class="file-input">
+            <input type="file" id="csv-upload" accept=".csv">
+            <button class="search-button" id="upload-button">Upload CSV</button>
+        </div>
+        
+        <!-- Action Buttons -->
+        <div class="action-buttons">
+            <button class="export-button" id="export-button">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"></path>
+                    <polyline points="7 10 12 15 17 10"></polyline>
+                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+                Export CSV
+            </button>
+        </div>
+        
+        <!-- Search -->
+        <div class="search-container">
+            <input type="text" class="search-input" id="search-input" placeholder="Search by name or section...">
+            <button class="search-button" id="search-button">Search</button>
+        </div>
+        
+        <!-- Filter Options -->
+        <div class="filter-options">
+            <button class="filter-button active" data-filter="all">All</button>
+            <button class="filter-button" data-filter="paid">Paid</button>
+            <button class="filter-button" data-filter="unpaid">Unpaid</button>
+            <select id="section-filter" class="search-input" style="max-width: 200px;">
+                <option value="all">All Sections</option>
+                <option value="Open">Open</option>
+                <option value="U1800">U1800</option>
+                <option value="U1400">U1400</option>
+                <option value="Unrated">Unrated</option>
+            </select>
+        </div>
+        
+        <!-- Registrants Table -->
+        <div style="overflow-x: auto;">
+            <table class="registrants-table" id="registrants-table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Player Name</th>
+                        <th>Section</th>
+                        <th>CFC ID</th>
+                        <th>Email</th>
+                        <th>Payment</th>
+                    </tr>
+                </thead>
+                <tbody id="registrants-body">
+                    <!-- Table will be populated by JavaScript -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        // Initialize empty array for registrants
+        let registrants = [];
+        
+        // Define the known section names to categorize entries
+        const knownSections = ["Open", "U1800", "U1400", "Unrated"];
+        
+        // Track current search term for highlighting
+        let currentSearchTerm = "";
+        
+        // Function to parse CSV data
+        function parseCSV(csvData) {
+            // Use PapaParse to parse the CSV
+            const results = Papa.parse(csvData, {
+                header: true,
+                skipEmptyLines: true,
+                transformHeader: function(header) {
+                    // Clean up header names by trimming whitespace
+                    return header.trim();
+                }
+            });
+            
+            // Log the parsed data structure for debugging
+            console.log("Parsed CSV:", results);
+            
+            // Map CSV data to our registrants structure
+            return results.data.map((row, index) => {
+                // Extract section from the row (using expected column name)
+                let section = "";
+                const sectionColumn = "Which section? Note: sections may be combined based upon entries.";
+                if (row[sectionColumn]) {
+                    section = row[sectionColumn].trim();
+                    // If the section doesn't exactly match our known sections, 
+                    // find the closest match
+                    if (!knownSections.includes(section)) {
+                        for (const knownSection of knownSections) {
+                            if (section.toLowerCase().includes(knownSection.toLowerCase())) {
+                                section = knownSection;
+                                break;
+                            }
+                        }
+                    }
+                }
+                
+                // CFC ID handling - ensure it's treated as a string
+                let cfcId = "";
+                const cfcColumn = "CFC ID (ONLY if playing in a rated section, a 5-6 digit number)";
+                if (row[cfcColumn] && row[cfcColumn].trim() !== "") {
+                    cfcId = row[cfcColumn].toString().trim();
+                }
+                
+                // Return formatted registration object
+                return {
+                    id: index + 1,
+                    timestamp: row["Timestamp"] || "",
+                    playerName: row["Players Name (Last name, First name)"] || "",
+                    parentName: row["Parent's name (optional)"] || "",
+                    section: section,
+                    cfcId: cfcId,
+                    email: row["Email address (For contact)"] || "",
+                    phone: row["Phone number (optional)"] || "",
+                    paid: false // Default to unpaid
+                };
+            });
+        }
+        
+        // Function to load sample data if no CSV is uploaded
+        function loadSampleData() {
+            registrants = [
+                {
+                    id: 1,
+                    timestamp: "2025-04-10 08:15:22",
+                    playerName: "Smith, John",
+                    parentName: "Smith, Jane",
+                    section: "Open",
+                    cfcId: "12345",
+                    email: "john.smith@example.com",
+                    phone: "555-123-4567",
+                    paid: false
+                },
+                {
+                    id: 2,
+                    timestamp: "2025-04-10 09:20:45",
+                    playerName: "Doe, Jane",
+                    parentName: "",
+                    section: "U1800",
+                    cfcId: "23456",
+                    email: "jane.doe@example.com",
+                    phone: "555-234-5678",
+                    paid: false
+                },
+                {
+                    id: 3,
+                    timestamp: "2025-04-11 10:30:15",
+                    playerName: "Johnson, Michael",
+                    parentName: "Johnson, Sarah",
+                    section: "U1400",
+                    cfcId: "34567",
+                    email: "michael.johnson@example.com",
+                    phone: "555-345-6789",
+                    paid: false
+                },
+                {
+                    id: 4,
+                    timestamp: "2025-04-11 11:45:30",
+                    playerName: "Wilson, Emily",
+                    parentName: "",
+                    section: "Unrated",
+                    cfcId: "",
+                    email: "emily.wilson@example.com",
+                    phone: "555-456-7890",
+                    paid: false
+                },
+                {
+                    id: 5,
+                    timestamp: "2025-04-12 13:05:10",
+                    playerName: "Brown, David",
+                    parentName: "",
+                    section: "Open",
+                    cfcId: "45678",
+                    email: "david.brown@example.com",
+                    phone: "555-567-8901",
+                    paid: false
+                }
+            ];
+            
+            renderTable(registrants);
+            populateSectionFilter();
+            updateStats();
+        }
+
+        // Function to highlight search term in text
+        function highlightSearchTerm(text, searchTerm) {
+            if (!searchTerm || typeof text !== 'string') return text;
+            
+            const regex = new RegExp(`(${searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+            return text.replace(regex, '<span class="highlight">$1</span>');
+        }
+
+        // Function to render the table
+        function renderTable(data) {
+            const tableBody = document.getElementById('registrants-body');
+            tableBody.innerHTML = '';
+            
+            data.forEach(registrant => {
+                const row = document.createElement('tr');
+                row.dataset.id = registrant.id;
+                row.dataset.paid = registrant.paid;
+                
+                // Apply highlighting to relevant fields if there's a search term
+                const highlightedName = highlightSearchTerm(registrant.playerName, currentSearchTerm);
+                const highlightedSection = highlightSearchTerm(registrant.section, currentSearchTerm);
+                const highlightedCfcId = highlightSearchTerm(registrant.cfcId, currentSearchTerm);
+                const highlightedEmail = highlightSearchTerm(registrant.email, currentSearchTerm);
+                
+                row.innerHTML = `
+                    <td>${registrant.id}</td>
+                    <td>${highlightedName}</td>
+                    <td>${highlightedSection}</td>
+                    <td>${highlightedCfcId}</td>
+                    <td>${highlightedEmail}</td>
+                    <td class="payment-status">
+                        <input type="checkbox" class="payment-checkbox" data-id="${registrant.id}" ${registrant.paid ? 'checked' : ''}>
+                        <span class="${registrant.paid ? 'paid' : 'unpaid'}">${registrant.paid ? 'Paid' : 'Unpaid'}</span>
+                    </td>
+                `;
+                
+                tableBody.appendChild(row);
+            });
+            
+            // Add event listeners to checkboxes
+            document.querySelectorAll('.payment-checkbox').forEach(checkbox => {
+                checkbox.addEventListener('change', handlePaymentChange);
+            });
+
+            updateStats();
+        }
+
+        // Function to handle payment checkbox changes
+        function handlePaymentChange(e) {
+            const id = parseInt(e.target.dataset.id);
+            const isPaid = e.target.checked;
+            
+            // Update data
+            const registrant = registrants.find(r => r.id === id);
+            if (registrant) {
+                registrant.paid = isPaid;
+            }
+            
+            // Update UI
+            const row = e.target.closest('tr');
+            row.dataset.paid = isPaid;
+            
+            const statusSpan = e.target.nextElementSibling;
+            statusSpan.textContent = isPaid ? 'Paid' : 'Unpaid';
+            statusSpan.className = isPaid ? 'paid' : 'unpaid';
+            
+            updateStats();
+        }
+
+        // Function to update stats
+        function updateStats() {
+            const totalRegistrations = registrants.length;
+            const totalPaid = registrants.filter(r => r.paid).length;
+            const totalUnpaid = totalRegistrations - totalPaid;
+            
+            document.getElementById('total-registrations').textContent = totalRegistrations;
+            document.getElementById('total-paid').textContent = totalPaid;
+            document.getElementById('total-unpaid').textContent = totalUnpaid;
+        }
+
+        // Function to filter table
+        function filterTable() {
+            const searchTerm = document.getElementById('search-input').value.toLowerCase();
+            const activeFilter = document.querySelector('.filter-button.active').dataset.filter;
+            const sectionFilter = document.getElementById('section-filter').value;
+            
+            // Update current search term for highlighting
+            currentSearchTerm = searchTerm;
+            
+            let filteredData = [...registrants];
+            
+            // Filter by search term
+            if (searchTerm) {
+                filteredData = filteredData.filter(r => 
+                    r.playerName.toLowerCase().includes(searchTerm) || 
+                    r.section.toLowerCase().includes(searchTerm) ||
+                    (r.cfcId && r.cfcId.toLowerCase().includes(searchTerm)) ||
+                    r.email.toLowerCase().includes(searchTerm)
+                );
+            }
+            
+            // Filter by payment status
+            if (activeFilter === 'paid') {
+                filteredData = filteredData.filter(r => r.paid);
+            } else if (activeFilter === 'unpaid') {
+                filteredData = filteredData.filter(r => !r.paid);
+            }
+            
+            // Filter by section
+            if (sectionFilter !== 'all') {
+                filteredData = filteredData.filter(r => r.section === sectionFilter);
+            }
+            
+            renderTable(filteredData);
+        }
+
+        // Function to export registrants to CSV
+        function exportToCSV() {
+            // Create CSV header row - make sure all columns are represented
+            const csvHeader = ['ID', 'Player Name', 'Section', 'CFC ID', 'Email', 'Payment Status'];
+            
+            // Properly escape CSV values to handle commas within fields
+            function escapeCSV(value) {
+                // Convert null or undefined to empty string
+                if (value === null || value === undefined) value = '';
+                
+                // Convert to string
+                value = String(value);
+                
+                // If value contains comma, quote, or newline, enclose in quotes
+                if (value.includes(',') || value.includes('"') || value.includes('\n')) {
+                    // Double any quotes within the value
+                    value = value.replace(/"/g, '""');
+                    // Enclose in quotes
+                    value = `"${value}"`;
+                }
+                return value;
+            }
+            
+            // Create CSV rows with proper formatting
+            const csvRows = registrants.map(r => [
+                escapeCSV(r.id),
+                escapeCSV(r.playerName),
+                escapeCSV(r.section),
+                escapeCSV(r.cfcId),
+                escapeCSV(r.email), // Ensure email is properly included
+                escapeCSV(r.paid ? 'PAID' : 'UNPAID')
+            ]);
+            
+            // Combine header and rows
+            const csvContent = [
+                csvHeader.join(','),
+                ...csvRows.map(row => row.join(','))
+            ].join('\n');
+            
+            // Create a Blob and download link
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            
+            // Set download attributes
+            link.href = url;
+            link.setAttribute('download', 'windsor_chess_registrants.csv');
+            
+            // Append to body, click, and remove
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            // Show notification
+            showNotification("CSV file exported successfully!", 'success');
+        }
+
+        // Add event listeners
+        document.getElementById('search-button').addEventListener('click', filterTable);
+        document.getElementById('search-input').addEventListener('keyup', function(e) {
+            if (e.key === 'Enter') {
+                filterTable();
+            }
+        });
+
+        document.getElementById('section-filter').addEventListener('change', filterTable);
+
+        // Export button event listener
+        document.getElementById('export-button').addEventListener('click', exportToCSV);
+
+        // Filter buttons event listeners
+        document.querySelectorAll('.filter-button').forEach(button => {
+            button.addEventListener('click', function() {
+                document.querySelectorAll('.filter-button').forEach(btn => {
+                    btn.classList.remove('active');
+                });
+                this.classList.add('active');
+                filterTable();
+            });
+        });
+
+        // Function to populate section filter dropdown
+        function populateSectionFilter() {
+            const selectElement = document.getElementById('section-filter');
+            
+            // Clear existing options except the "All" option
+            while (selectElement.options.length > 1) {
+                selectElement.remove(1);
+            }
+            
+            // Get unique sections from registrants
+            const sections = [...new Set(registrants.map(r => r.section))].filter(s => s);
+            
+            // Add sections to dropdown
+            sections.sort().forEach(section => {
+                const option = document.createElement('option');
+                option.value = section;
+                option.textContent = section;
+                selectElement.appendChild(option);
+            });
+        }
+
+        // Show notification function
+        function showNotification(message, type) {
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            notification.className = `notification ${type}`;
+            notification.style.display = 'block';
+            
+            // Hide after 5 seconds
+            setTimeout(() => {
+                notification.style.display = 'none';
+            }, 5000);
+        }
+        
+        // Handle CSV file upload
+        document.getElementById('upload-button').addEventListener('click', function() {
+            const fileInput = document.getElementById('csv-upload');
+            const file = fileInput.files[0];
+            
+            if (file) {
+                const reader = new FileReader();
+                
+                reader.onload = function(e) {
+                    const csvData = e.target.result;
+                    try {
+                        // Parse CSV and set as registrants
+                        registrants = parseCSV(csvData);
+                        
+                        // Load saved payment data and apply to new registrants
+                        applyPaymentData();
+                        
+                        // Render table and update UI
+                        renderTable(registrants);
+                        populateSectionFilter();
+                        updateStats();
+                        
+                        // Show success notification
+                        showNotification(`Successfully loaded ${registrants.length} registrations from CSV file.`, 'success');
+                    } catch (error) {
+                        console.error("Error parsing CSV:", error);
+                        showNotification("Error parsing CSV file. Please check the format and try again.", 'error');
+                    }
+                };
+                
+                reader.onerror = function() {
+                    showNotification("Failed to read the file. Please try again.", 'error');
+                };
+                
+                reader.readAsText(file);
+            } else {
+                showNotification("Please select a CSV file to upload.", 'error');
+            }
+        });
+        
+        // Load PapaParse library
+        function loadPapaParseLibrary() {
+            return new Promise((resolve, reject) => {
+                const script = document.createElement('script');
+                script.src = 'https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js';
+                script.onload = resolve;
+                script.onerror = reject;
+                document.head.appendChild(script);
+            });
+        }
+        
+        // Save data to localStorage function
+        function saveData() {
+            // Create a storage object that just tracks IDs and payment status
+            const paymentData = registrants.map(r => ({
+                id: r.id,
+                playerName: r.playerName, // Store name for reference
+                paid: r.paid
+            }));
+            localStorage.setItem('chessRegistrants', JSON.stringify(paymentData));
+        }
+        
+        // Apply payment data from localStorage to current registrants
+        function applyPaymentData() {
+            const savedData = localStorage.getItem('chessRegistrants');
+            if (savedData) {
+                const paymentData = JSON.parse(savedData);
+                
+                // Match based on names since IDs might change with different uploads
+                paymentData.forEach(saved => {
+                    const match = registrants.find(r => 
+                        r.playerName.toLowerCase() === saved.playerName.toLowerCase()
+                    );
+                    
+                    if (match) {
+                        match.paid = saved.paid;
+                    }
+                });
+            }
+        }
+        
+        // Save data when changes are made
+        document.addEventListener('change', function(e) {
+            if (e.target.classList.contains('payment-checkbox')) {
+                saveData();
+            }
+        });
+        
+        // Initialize the app
+        async function initApp() {
+            try {
+                // Load PapaParse library
+                await loadPapaParseLibrary();
+                
+                // Try to load saved payment data
+                const savedData = localStorage.getItem('chessRegistrants');
+                
+                if (savedData) {
+                    loadSampleData();
+                    applyPaymentData();
+                } else {
+                    loadSampleData();
+                }
+            } catch (error) {
+                console.error("Error initializing app:", error);
+                alert("There was an error loading the required libraries. Please refresh the page.");
+            }
+        }
+        
+        // Initialize on page load
+        window.addEventListener('load', initApp);
+    </script>
+</body>
+</html>
