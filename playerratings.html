@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>USCF Player Lookup Tool</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2.2em;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 40px;
+            font-size: 1.1em;
+        }
+
+        .search-mode {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+            justify-content: center;
+        }
+
+        .mode-button {
+            padding: 12px 25px;
+            border: 2px solid #667eea;
+            background: transparent;
+            color: #667eea;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .mode-button.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .mode-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .search-section {
+            display: none;
+        }
+
+        .search-section.active {
+            display: block;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+            font-size: 1.1em;
+        }
+
+        input[type="text"], input[type="number"], input[type="file"] {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e1e5e9;
+            border-radius: 12px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.8);
+            box-sizing: border-box;
+        }
+
+        input[type="text"]:focus, input[type="number"]:focus, input[type="file"]:focus {
+            outline: none;
+            border-color: #667eea;
+            background: rgba(255, 255, 255, 1);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.15);
+        }
+
+        input[type="file"] {
+            cursor: pointer;
+        }
+
+        .search-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 30px;
+        }
+
+        button {
+            padding: 15px 25px;
+            font-size: 16px;
+            font-weight: 600;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(255, 107, 107, 0.4);
+        }
+
+        .btn-bulk {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            grid-column: 1 / -1;
+        }
+
+        .btn-bulk:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(40, 167, 69, 0.4);
+        }
+
+        .info {
+            background: rgba(102, 126, 234, 0.1);
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 30px;
+            font-size: 14px;
+            color: #555;
+        }
+
+        .info strong {
+            color: #667eea;
+        }
+
+        .radio-group {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            justify-content: center;
+        }
+
+        .radio-option {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            padding: 10px 20px;
+            border-radius: 25px;
+            background: rgba(255, 255, 255, 0.5);
+            transition: all 0.3s ease;
+        }
+
+        .radio-option:hover {
+            background: rgba(102, 126, 234, 0.1);
+        }
+
+        .radio-option input[type="radio"] {
+            margin: 0;
+            accent-color: #667eea;
+        }
+
+        .radio-option label {
+            margin: 0;
+            font-weight: 500;
+            cursor: pointer;
+        }
+
+        .csv-preview {
+            margin-top: 20px;
+            max-height: 200px;
+            overflow-y: auto;
+            background: rgba(255, 255, 255, 0.8);
+            border: 2px solid #e1e5e9;
+            border-radius: 12px;
+            padding: 15px;
+        }
+
+        .csv-preview table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+
+        .csv-preview th, .csv-preview td {
+            padding: 8px 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .csv-preview th {
+            background: rgba(102, 126, 234, 0.1);
+            font-weight: 600;
+            color: #333;
+        }
+
+        .status {
+            margin-top: 15px;
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-weight: 600;
+        }
+
+        .status.success {
+            background: rgba(40, 167, 69, 0.1);
+            border-left: 4px solid #28a745;
+            color: #155724;
+        }
+
+        .status.error {
+            background: rgba(220, 53, 69, 0.1);
+            border-left: 4px solid #dc3545;
+            color: #721c24;
+        }
+
+        @media (max-width: 480px) {
+            .search-buttons {
+                grid-template-columns: 1fr;
+            }
+            
+            .search-mode {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .radio-group {
+                flex-direction: column;
+                gap: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏆 USCF Player Lookup</h1>
+        <p class="subtitle">Search individual players or bulk lookup from CSV</p>
+        
+        <div class="search-mode">
+            <button class="mode-button active" onclick="switchMode('individual')">Individual Search</button>
+            <button class="mode-button" onclick="switchMode('bulk')">Bulk CSV Search</button>
+        </div>
+
+        <!-- Individual Search Section -->
+        <div id="individualSearch" class="search-section active">
+            <form id="playerSearchForm">
+                <div class="radio-group">
+                    <div class="radio-option">
+                        <input type="radio" id="searchByName" name="searchType" value="name" checked>
+                        <label for="searchByName">Search by Name</label>
+                    </div>
+                    <div class="radio-option">
+                        <input type="radio" id="searchById" name="searchType" value="id">
+                        <label for="searchById">Search by USCF ID</label>
+                    </div>
+                </div>
+
+                <div class="form-group" id="nameGroup">
+                    <label for="playerName">Player Name:</label>
+                    <input type="text" id="playerName" placeholder="Enter first name, last name, or both" maxlength="100">
+                </div>
+
+                <div class="form-group" id="idGroup" style="display: none;">
+                    <label for="uscfId">USCF ID:</label>
+                    <input type="number" id="uscfId" placeholder="Enter USCF ID number" min="1">
+                </div>
+
+                <div class="search-buttons">
+                    <button type="button" class="btn-primary" onclick="searchPlayer()">
+                        🔍 Search Player
+                    </button>
+                    <button type="button" class="btn-secondary" onclick="openUSCFSearch()">
+                        🌐 Open USCF Search
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Bulk CSV Search Section -->
+        <div id="bulkSearch" class="search-section">
+            <div class="form-group">
+                <label for="csvFile">Upload CSV File:</label>
+                <input type="file" id="csvFile" accept=".csv" onchange="handleFileUpload(event)">
+            </div>
+
+            <div class="form-group" id="bulkSearchMode" style="display: none;">
+                <label>Bulk Search Mode:</label>
+                <div class="radio-group">
+                    <div class="radio-option">
+                        <input type="radio" id="bulkById" name="bulkSearchType" value="id" checked>
+                        <label for="bulkById">Search by USCF ID (when available)</label>
+                    </div>
+                    <div class="radio-option">
+                        <input type="radio" id="bulkByName" name="bulkSearchType" value="name">
+                        <label for="bulkByName">Search by Player Name</label>
+                    </div>
+                </div>
+            </div>
+
+            <div id="csvPreview" class="csv-preview" style="display: none;"></div>
+            
+            <div id="fileStatus"></div>
+
+            <div class="search-buttons">
+                <button type="button" class="btn-bulk" id="bulkSearchBtn" onclick="bulkSearchPlayers()" disabled>
+                    🚀 Open All Player Lookups
+                </button>
+            </div>
+        </div>
+
+        <div class="info">
+            <strong>How to use:</strong><br>
+            <strong>Individual Search:</strong><br>
+            • <strong>Name Search:</strong> Enter first name, last name, or both (e.g., "Magnus Carlsen" or just "Carlsen")<br>
+            • <strong>ID Search:</strong> Enter the exact USCF ID number if you know it<br><br>
+            <strong>Bulk CSV Search:</strong><br>
+            • Upload a CSV file with player data<br>
+            • CSV should have columns for player names and/or USCF IDs<br>
+            • Common formats: "Players Name (Last name, First name)", "USCF ID", etc.<br>
+            • Click "Open All Player Lookups" to open tabs for all players<br>
+            • <em>Note: Your browser may block multiple pop-ups - allow them when prompted</em>
+        </div>
+    </div>
+
+    <script>
+        let csvData = [];
+        let playerColumns = {};
+
+        function switchMode(mode) {
+            const individualSection = document.getElementById('individualSearch');
+            const bulkSection = document.getElementById('bulkSearch');
+            const modeButtons = document.querySelectorAll('.mode-button');
+            
+            modeButtons.forEach(btn => btn.classList.remove('active'));
+            
+            if (mode === 'individual') {
+                individualSection.classList.add('active');
+                bulkSection.classList.remove('active');
+                modeButtons[0].classList.add('active');
+                document.getElementById('playerName').focus();
+            } else {
+                individualSection.classList.remove('active');
+                bulkSection.classList.add('active');
+                modeButtons[1].classList.add('active');
+            }
+        }
+
+        // Individual search functionality
+        document.querySelectorAll('input[name="searchType"]').forEach(radio => {
+            radio.addEventListener('change', function() {
+                const nameGroup = document.getElementById('nameGroup');
+                const idGroup = document.getElementById('idGroup');
+                
+                if (this.value === 'name') {
+                    nameGroup.style.display = 'block';
+                    idGroup.style.display = 'none';
+                    document.getElementById('playerName').focus();
+                } else {
+                    nameGroup.style.display = 'none';
+                    idGroup.style.display = 'block';
+                    document.getElementById('uscfId').focus();
+                }
+            });
+        });
+
+        document.getElementById('playerName').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                searchPlayer();
+            }
+        });
+
+        document.getElementById('uscfId').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                searchPlayer();
+            }
+        });
+
+        function searchPlayer() {
+            const searchType = document.querySelector('input[name="searchType"]:checked').value;
+            let searchUrl = '';
+            
+            if (searchType === 'name') {
+                const playerName = document.getElementById('playerName').value.trim();
+                
+                if (!playerName) {
+                    alert('Please enter a player name');
+                    document.getElementById('playerName').focus();
+                    return;
+                }
+                
+                searchUrl = `https://www.uschess.org/datapage/player-search.php?name=${encodeURIComponent(playerName)}&state=ANY&ratingmin=&ratingmax=&order=N&rating=R&mode=Find`;
+            } else {
+                const uscfId = document.getElementById('uscfId').value.trim();
+                
+                if (!uscfId || isNaN(uscfId)) {
+                    alert('Please enter a valid USCF ID number');
+                    document.getElementById('uscfId').focus();
+                    return;
+                }
+                
+                searchUrl = `https://www.uschess.org/datapage/player-search.php?name=${encodeURIComponent(uscfId)}&state=ANY&ratingmin=&ratingmax=&order=N&rating=R&mode=Find`;
+            }
+            
+            window.open(searchUrl, '_blank');
+        }
+
+        function openUSCFSearch() {
+            window.open('https://www.uschess.org/datapage/player-search.php?name=&state=ANY&ratingmin=&ratingmax=&order=N&rating=R&mode=Find', '_blank');
+        }
+
+        // CSV handling functionality
+        async function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            const statusDiv = document.getElementById('fileStatus');
+            statusDiv.innerHTML = '<div class="status">Processing file...</div>';
+            
+            try {
+                const text = await file.text();
+                parseCSVWithPapaparse(text);
+            } catch (error) {
+                statusDiv.innerHTML = `<div class="status error">Error reading file: ${error.message}</div>`;
+            }
+        }
+
+        function parseCSVWithPapaparse(csvText) {
+            // Use a more robust CSV parser
+            const lines = csvText.split('\n').filter(line => line.trim());
+            
+            if (lines.length < 2) {
+                document.getElementById('fileStatus').innerHTML = '<div class="status error">CSV file must have at least a header and one data row.</div>';
+                return;
+            }
+            
+            // Parse headers - handle quoted headers properly
+            const headerLine = lines[0];
+            const headers = parseCSVLine(headerLine).map(h => h.replace(/^"|"$/g, '').trim());
+            
+            // Parse data rows
+            csvData = [];
+            for (let i = 1; i < lines.length; i++) {
+                const values = parseCSVLine(lines[i]);
+                if (values.length > 0 && values.some(v => v.trim())) { // Skip empty rows
+                    const row = {};
+                    headers.forEach((header, index) => {
+                        if (index < values.length) {
+                            row[header] = values[index] ? values[index].replace(/^"|"$/g, '').trim() : '';
+                        } else {
+                            row[header] = '';
+                        }
+                    });
+                    csvData.push(row);
+                }
+            }
+            
+            // Identify player-related columns
+            identifyPlayerColumns(headers);
+            
+            // Show preview
+            showCSVPreview(headers);
+            
+            // Show bulk search mode options
+            document.getElementById('bulkSearchMode').style.display = 'block';
+            
+            // Update status
+            document.getElementById('fileStatus').innerHTML = 
+                `<div class="status success">Loaded ${csvData.length} players from CSV file</div>`;
+            
+            // Enable bulk search button
+            document.getElementById('bulkSearchBtn').disabled = false;
+            
+            // Debug info
+            console.log('Parsed headers:', headers);
+            console.log('Player columns identified:', playerColumns);
+            console.log('First few rows:', csvData.slice(0, 3));
+        }
+
+        function parseCSVLine(line) {
+            const values = [];
+            let current = '';
+            let inQuotes = false;
+            
+            for (let i = 0; i < line.length; i++) {
+                const char = line[i];
+                if (char === '"') {
+                    inQuotes = !inQuotes;
+                } else if (char === ',' && !inQuotes) {
+                    values.push(current);
+                    current = '';
+                } else {
+                    current += char;
+                }
+            }
+            values.push(current);
+            return values;
+        }
+
+        function identifyPlayerColumns(headers) {
+            playerColumns = {};
+            
+            headers.forEach((header, index) => {
+                const lowerHeader = header.toLowerCase().trim();
+                
+                // Look for player name column
+                if (lowerHeader.includes('name') && (lowerHeader.includes('player') || lowerHeader.includes('last') || lowerHeader.includes('first'))) {
+                    playerColumns.name = header;
+                } else if (lowerHeader === 'name' || lowerHeader === 'player name' || lowerHeader === 'full name') {
+                    if (!playerColumns.name) playerColumns.name = header;
+                }
+                
+                // Look for USCF ID column (handle trailing spaces and variations)
+                if (lowerHeader.includes('uscf') && lowerHeader.includes('id')) {
+                    playerColumns.id = header;
+                } else if (lowerHeader === 'id' || lowerHeader === 'uscf id' || lowerHeader === 'uscf' || lowerHeader === 'uscfid') {
+                    if (!playerColumns.id) playerColumns.id = header;
+                }
+            });
+            
+            // Debug output
+            console.log('Headers found:', headers);
+            console.log('Player columns identified:', playerColumns);
+        }
+
+        function showCSVPreview(headers) {
+            const previewDiv = document.getElementById('csvPreview');
+            const maxRows = 5;
+            
+            let html = '<table><thead><tr>';
+            headers.forEach(header => {
+                html += `<th>${header}</th>`;
+            });
+            html += '</tr></thead><tbody>';
+            
+            const rowsToShow = Math.min(csvData.length, maxRows);
+            for (let i = 0; i < rowsToShow; i++) {
+                html += '<tr>';
+                headers.forEach(header => {
+                    html += `<td>${csvData[i][header] || ''}</td>`;
+                });
+                html += '</tr>';
+            }
+            
+            if (csvData.length > maxRows) {
+                html += `<tr><td colspan="${headers.length}" style="font-style: italic; text-align: center; color: #666;">... and ${csvData.length - maxRows} more rows</td></tr>`;
+            }
+            
+            html += '</tbody></table>';
+            previewDiv.innerHTML = html;
+            previewDiv.style.display = 'block';
+        }
+
+        function bulkSearchPlayers() {
+            if (csvData.length === 0) {
+                alert('Please upload a CSV file first');
+                return;
+            }
+            
+            const searchMode = document.querySelector('input[name="bulkSearchType"]:checked').value;
+            let searchCount = 0;
+            const delay = 500; // 500ms delay between opening tabs to avoid overwhelming the browser
+            let validPlayers = 0;
+            
+            console.log(`Starting bulk search in ${searchMode} mode with player columns:`, playerColumns);
+            console.log('Sample data:', csvData[0]);
+            
+            csvData.forEach((player, index) => {
+                setTimeout(() => {
+                    let searchUrl = '';
+                    
+                    if (searchMode === 'id') {
+                        // Try to search by USCF ID first if available
+                        if (playerColumns.id && player[playerColumns.id] !== undefined && player[playerColumns.id] !== null) {
+                            const uscfId = String(player[playerColumns.id]).trim();
+                            console.log(`Player ${index + 1} USCF ID: "${uscfId}" (type: ${typeof player[playerColumns.id]})`);
+                            
+                            if (uscfId && uscfId !== '' && !isNaN(uscfId)) {
+                                searchUrl = `https://www.uschess.org/datapage/player-search.php?name=${encodeURIComponent(uscfId)}&state=ANY&ratingmin=&ratingmax=&order=N&rating=R&mode=Find`;
+                                console.log(`Using ID search for player ${index + 1}: ${searchUrl}`);
+                            }
+                        }
+                        
+                        // If no ID available, fall back to name search
+                        if (!searchUrl && playerColumns.name && player[playerColumns.name]) {
+                            const playerName = String(player[playerColumns.name]).trim();
+                            console.log(`Player ${index + 1} Name (fallback): "${playerName}"`);
+                            
+                            if (playerName && playerName !== '') {
+                                searchUrl = `https://www.uschess.org/datapage/player-search.php?name=${encodeURIComponent(playerName)}&state=ANY&ratingmin=&ratingmax=&order=N&rating=R&mode=Find`;
+                                console.log(`Using name search (fallback) for player ${index + 1}: ${searchUrl}`);
+                            }
+                        }
+                    } else {
+                        // Search by name mode
+                        if (playerColumns.name && player[playerColumns.name]) {
+                            const playerName = String(player[playerColumns.name]).trim();
+                            console.log(`Player ${index + 1} Name: "${playerName}"`);
+                            
+                            if (playerName && playerName !== '') {
+                                searchUrl = `https://www.uschess.org/datapage/player-search.php?name=${encodeURIComponent(playerName)}&state=ANY&ratingmin=&ratingmax=&order=N&rating=R&mode=Find`;
+                                console.log(`Using name search for player ${index + 1}: ${searchUrl}`);
+                            }
+                        }
+                    }
+                    
+                    if (searchUrl) {
+                        window.open(searchUrl, '_blank');
+                        validPlayers++;
+                    } else {
+                        console.log(`No valid search data for player ${index + 1}:`, player);
+                    }
+                }, index * delay);
+            });
+            
+            // Show confirmation
+            setTimeout(() => {
+                const modeText = searchMode === 'id' ? 'USCF ID (with name fallback)' : 'Player Name';
+                alert(`Opening tabs for ${csvData.length} players using ${modeText} search mode.\n\nYour browser may ask to allow pop-ups - please allow them to see all results.\n\nColumns being used:\n- Name: ${playerColumns.name || 'Not found'}\n- USCF ID: ${playerColumns.id || 'Not found'}`);
+            }, 100);
+        }
+
+        // Auto-focus when page loads
+        window.addEventListener('load', function() {
+            document.getElementById('playerName').focus();
+        });
+    </script>
+</body>
+</html>
