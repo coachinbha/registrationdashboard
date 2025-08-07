@@ -7,7 +7,7 @@
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            max-width: 800px;
+            max-width: 1000px;
             margin: 0 auto;
             padding: 40px 20px;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -155,15 +155,13 @@
             box-shadow: 0 10px 25px rgba(255, 107, 107, 0.4);
         }
 
-        .btn-bulk {
-            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
-            color: white;
-            grid-column: 1 / -1;
-        }
-
-        .btn-bulk:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 10px 25px rgba(40, 167, 69, 0.4);
+        .btn-small {
+            padding: 8px 16px;
+            font-size: 14px;
+            text-transform: none;
+            letter-spacing: normal;
+            border-radius: 8px;
+            min-width: auto;
         }
 
         .info {
@@ -213,32 +211,80 @@
             cursor: pointer;
         }
 
-        .csv-preview {
-            margin-top: 20px;
-            max-height: 200px;
+        .players-list {
+            margin-top: 30px;
+            max-height: 500px;
             overflow-y: auto;
             background: rgba(255, 255, 255, 0.8);
             border: 2px solid #e1e5e9;
             border-radius: 12px;
-            padding: 15px;
+            padding: 20px;
         }
 
-        .csv-preview table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 14px;
+        .players-list h3 {
+            margin-top: 0;
+            margin-bottom: 20px;
+            color: #333;
+            text-align: center;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
 
-        .csv-preview th, .csv-preview td {
-            padding: 8px 12px;
-            text-align: left;
-            border-bottom: 1px solid #ddd;
+        .player-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 15px;
+            margin-bottom: 10px;
+            background: rgba(255, 255, 255, 0.7);
+            border: 1px solid #e1e5e9;
+            border-radius: 8px;
+            transition: all 0.2s ease;
         }
 
-        .csv-preview th {
-            background: rgba(102, 126, 234, 0.1);
+        .player-row:hover {
+            background: rgba(102, 126, 234, 0.05);
+            border-color: #667eea;
+        }
+
+        .player-info {
+            flex-grow: 1;
+            margin-right: 15px;
+        }
+
+        .player-name {
             font-weight: 600;
             color: #333;
+            margin-bottom: 4px;
+        }
+
+        .player-id {
+            font-size: 14px;
+            color: #666;
+        }
+
+        .search-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+
+        .search-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        .search-btn:active {
+            transform: translateY(0);
         }
 
         .status {
@@ -260,7 +306,27 @@
             color: #721c24;
         }
 
-        @media (max-width: 480px) {
+        .csv-summary {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: rgba(102, 126, 234, 0.1);
+            border-radius: 8px;
+        }
+
+        .csv-summary-text {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .csv-summary-columns {
+            font-size: 14px;
+            color: #666;
+        }
+
+        @media (max-width: 768px) {
             .search-buttons {
                 grid-template-columns: 1fr;
             }
@@ -273,6 +339,22 @@
             .radio-group {
                 flex-direction: column;
                 gap: 10px;
+            }
+            
+            .player-row {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 10px;
+            }
+            
+            .player-info {
+                margin-right: 0;
+            }
+            
+            .csv-summary {
+                flex-direction: column;
+                gap: 10px;
+                text-align: center;
             }
         }
     </style>
@@ -342,15 +424,20 @@
                     </div>
                 </div>
             </div>
-
-            <div id="csvPreview" class="csv-preview" style="display: none;"></div>
             
             <div id="fileStatus"></div>
 
-            <div class="search-buttons">
-                <button type="button" class="btn-bulk" id="bulkSearchBtn" onclick="bulkSearchPlayers()" disabled>
-                    🚀 Open All Player Lookups
-                </button>
+            <div id="playersListContainer" style="display: none;">
+                <div class="csv-summary">
+                    <div>
+                        <div class="csv-summary-text" id="csvSummaryText"></div>
+                        <div class="csv-summary-columns" id="csvSummaryColumns"></div>
+                    </div>
+                </div>
+                <div class="players-list">
+                    <h3>Players Found</h3>
+                    <div id="playersList"></div>
+                </div>
             </div>
         </div>
 
@@ -363,8 +450,8 @@
             • Upload a CSV file with player data<br>
             • CSV should have columns for player names and/or USCF IDs<br>
             • Common formats: "Players Name (Last name, First name)", "USCF ID", etc.<br>
-            • Click "Open All Player Lookups" to open tabs for all players<br>
-            • <em>Note: Your browser may block multiple pop-ups - allow them when prompted</em>
+            • Click individual "Search" buttons to look up each player<br>
+            • <em>Much more browser-friendly than opening all tabs at once!</em>
         </div>
     </div>
 
@@ -503,8 +590,8 @@
             // Identify player-related columns
             identifyPlayerColumns(headers);
             
-            // Show preview
-            showCSVPreview(headers);
+            // Show players list
+            displayPlayersList();
             
             // Show bulk search mode options
             document.getElementById('bulkSearchMode').style.display = 'block';
@@ -512,9 +599,6 @@
             // Update status
             document.getElementById('fileStatus').innerHTML = 
                 `<div class="status success">Loaded ${csvData.length} players from CSV file</div>`;
-            
-            // Enable bulk search button
-            document.getElementById('bulkSearchBtn').disabled = false;
             
             // Debug info
             console.log('Parsed headers:', headers);
@@ -568,101 +652,100 @@
             console.log('Player columns identified:', playerColumns);
         }
 
-        function showCSVPreview(headers) {
-            const previewDiv = document.getElementById('csvPreview');
-            const maxRows = 5;
+        function displayPlayersList() {
+            const container = document.getElementById('playersListContainer');
+            const playersList = document.getElementById('playersList');
+            const summaryText = document.getElementById('csvSummaryText');
+            const summaryColumns = document.getElementById('csvSummaryColumns');
             
-            let html = '<table><thead><tr>';
-            headers.forEach(header => {
-                html += `<th>${header}</th>`;
+            // Update summary
+            summaryText.textContent = `${csvData.length} players loaded`;
+            summaryColumns.textContent = `Using columns: Name: ${playerColumns.name || 'Not found'}, USCF ID: ${playerColumns.id || 'Not found'}`;
+            
+            // Clear previous content
+            playersList.innerHTML = '';
+            
+            // Add each player
+            csvData.forEach((player, index) => {
+                const playerDiv = document.createElement('div');
+                playerDiv.className = 'player-row';
+                
+                const playerInfo = document.createElement('div');
+                playerInfo.className = 'player-info';
+                
+                const playerName = document.createElement('div');
+                playerName.className = 'player-name';
+                const name = playerColumns.name ? (player[playerColumns.name] || 'No name') : 'No name';
+                playerName.textContent = name;
+                
+                const playerId = document.createElement('div');
+                playerId.className = 'player-id';
+                const id = playerColumns.id ? (player[playerColumns.id] || 'No ID') : 'No ID';
+                playerId.textContent = `USCF ID: ${id}`;
+                
+                playerInfo.appendChild(playerName);
+                playerInfo.appendChild(playerId);
+                
+                const searchBtn = document.createElement('button');
+                searchBtn.className = 'search-btn';
+                searchBtn.textContent = '🔍 Search';
+                searchBtn.onclick = () => searchIndividualPlayer(player, index);
+                
+                playerDiv.appendChild(playerInfo);
+                playerDiv.appendChild(searchBtn);
+                
+                playersList.appendChild(playerDiv);
             });
-            html += '</tr></thead><tbody>';
             
-            const rowsToShow = Math.min(csvData.length, maxRows);
-            for (let i = 0; i < rowsToShow; i++) {
-                html += '<tr>';
-                headers.forEach(header => {
-                    html += `<td>${csvData[i][header] || ''}</td>`;
-                });
-                html += '</tr>';
-            }
-            
-            if (csvData.length > maxRows) {
-                html += `<tr><td colspan="${headers.length}" style="font-style: italic; text-align: center; color: #666;">... and ${csvData.length - maxRows} more rows</td></tr>`;
-            }
-            
-            html += '</tbody></table>';
-            previewDiv.innerHTML = html;
-            previewDiv.style.display = 'block';
+            container.style.display = 'block';
         }
 
-        function bulkSearchPlayers() {
-            if (csvData.length === 0) {
-                alert('Please upload a CSV file first');
-                return;
+        function searchIndividualPlayer(player, index) {
+            const searchMode = document.querySelector('input[name="bulkSearchType"]:checked').value;
+            let searchUrl = '';
+            
+            console.log(`Searching player ${index + 1}:`, player);
+            
+            if (searchMode === 'id') {
+                // Try to search by USCF ID first if available
+                if (playerColumns.id && player[playerColumns.id] !== undefined && player[playerColumns.id] !== null) {
+                    const uscfId = String(player[playerColumns.id]).trim();
+                    console.log(`Player ${index + 1} USCF ID: "${uscfId}" (type: ${typeof player[playerColumns.id]})`);
+                    
+                    if (uscfId && uscfId !== '' && !isNaN(uscfId)) {
+                        searchUrl = `https://www.uschess.org/datapage/player-search.php?name=${encodeURIComponent(uscfId)}&state=ANY&ratingmin=&ratingmax=&order=N&rating=R&mode=Find`;
+                        console.log(`Using ID search for player ${index + 1}: ${searchUrl}`);
+                    }
+                }
+                
+                // If no ID available, fall back to name search
+                if (!searchUrl && playerColumns.name && player[playerColumns.name]) {
+                    const playerName = String(player[playerColumns.name]).trim();
+                    console.log(`Player ${index + 1} Name (fallback): "${playerName}"`);
+                    
+                    if (playerName && playerName !== '') {
+                        searchUrl = `https://www.uschess.org/datapage/player-search.php?name=${encodeURIComponent(playerName)}&state=ANY&ratingmin=&ratingmax=&order=N&rating=R&mode=Find`;
+                        console.log(`Using name search (fallback) for player ${index + 1}: ${searchUrl}`);
+                    }
+                }
+            } else {
+                // Search by name mode
+                if (playerColumns.name && player[playerColumns.name]) {
+                    const playerName = String(player[playerColumns.name]).trim();
+                    console.log(`Player ${index + 1} Name: "${playerName}"`);
+                    
+                    if (playerName && playerName !== '') {
+                        searchUrl = `https://www.uschess.org/datapage/player-search.php?name=${encodeURIComponent(playerName)}&state=ANY&ratingmin=&ratingmax=&order=N&rating=R&mode=Find`;
+                        console.log(`Using name search for player ${index + 1}: ${searchUrl}`);
+                    }
+                }
             }
             
-            const searchMode = document.querySelector('input[name="bulkSearchType"]:checked').value;
-            let searchCount = 0;
-            const delay = 500; // 500ms delay between opening tabs to avoid overwhelming the browser
-            let validPlayers = 0;
-            
-            console.log(`Starting bulk search in ${searchMode} mode with player columns:`, playerColumns);
-            console.log('Sample data:', csvData[0]);
-            
-            csvData.forEach((player, index) => {
-                setTimeout(() => {
-                    let searchUrl = '';
-                    
-                    if (searchMode === 'id') {
-                        // Try to search by USCF ID first if available
-                        if (playerColumns.id && player[playerColumns.id] !== undefined && player[playerColumns.id] !== null) {
-                            const uscfId = String(player[playerColumns.id]).trim();
-                            console.log(`Player ${index + 1} USCF ID: "${uscfId}" (type: ${typeof player[playerColumns.id]})`);
-                            
-                            if (uscfId && uscfId !== '' && !isNaN(uscfId)) {
-                                searchUrl = `https://www.uschess.org/datapage/player-search.php?name=${encodeURIComponent(uscfId)}&state=ANY&ratingmin=&ratingmax=&order=N&rating=R&mode=Find`;
-                                console.log(`Using ID search for player ${index + 1}: ${searchUrl}`);
-                            }
-                        }
-                        
-                        // If no ID available, fall back to name search
-                        if (!searchUrl && playerColumns.name && player[playerColumns.name]) {
-                            const playerName = String(player[playerColumns.name]).trim();
-                            console.log(`Player ${index + 1} Name (fallback): "${playerName}"`);
-                            
-                            if (playerName && playerName !== '') {
-                                searchUrl = `https://www.uschess.org/datapage/player-search.php?name=${encodeURIComponent(playerName)}&state=ANY&ratingmin=&ratingmax=&order=N&rating=R&mode=Find`;
-                                console.log(`Using name search (fallback) for player ${index + 1}: ${searchUrl}`);
-                            }
-                        }
-                    } else {
-                        // Search by name mode
-                        if (playerColumns.name && player[playerColumns.name]) {
-                            const playerName = String(player[playerColumns.name]).trim();
-                            console.log(`Player ${index + 1} Name: "${playerName}"`);
-                            
-                            if (playerName && playerName !== '') {
-                                searchUrl = `https://www.uschess.org/datapage/player-search.php?name=${encodeURIComponent(playerName)}&state=ANY&ratingmin=&ratingmax=&order=N&rating=R&mode=Find`;
-                                console.log(`Using name search for player ${index + 1}: ${searchUrl}`);
-                            }
-                        }
-                    }
-                    
-                    if (searchUrl) {
-                        window.open(searchUrl, '_blank');
-                        validPlayers++;
-                    } else {
-                        console.log(`No valid search data for player ${index + 1}:`, player);
-                    }
-                }, index * delay);
-            });
-            
-            // Show confirmation
-            setTimeout(() => {
-                const modeText = searchMode === 'id' ? 'USCF ID (with name fallback)' : 'Player Name';
-                alert(`Opening tabs for ${csvData.length} players using ${modeText} search mode.\n\nYour browser may ask to allow pop-ups - please allow them to see all results.\n\nColumns being used:\n- Name: ${playerColumns.name || 'Not found'}\n- USCF ID: ${playerColumns.id || 'Not found'}`);
-            }, 100);
+            if (searchUrl) {
+                window.open(searchUrl, '_blank');
+            } else {
+                alert(`No valid search data found for this player.\n\nPlayer data: ${JSON.stringify(player, null, 2)}`);
+            }
         }
 
         // Auto-focus when page loads
