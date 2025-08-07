@@ -433,6 +433,9 @@
                         <div class="csv-summary-text" id="csvSummaryText"></div>
                         <div class="csv-summary-columns" id="csvSummaryColumns"></div>
                     </div>
+                    <button type="button" class="btn-primary btn-small" id="searchAllBtn" onclick="searchAllPlayers()">
+                        🚀 Search All Players
+                    </button>
                 </div>
                 <div class="players-list">
                     <h3>Players Found</h3>
@@ -745,6 +748,62 @@
                 window.open(searchUrl, '_blank');
             } else {
                 alert(`No valid search data found for this player.\n\nPlayer data: ${JSON.stringify(player, null, 2)}`);
+            }
+        }
+
+        function searchAllPlayers() {
+            const searchButtons = document.querySelectorAll('.search-btn');
+            const totalPlayers = searchButtons.length;
+            
+            if (totalPlayers === 0) {
+                alert('No players to search');
+                return;
+            }
+            
+            const searchAllBtn = document.getElementById('searchAllBtn');
+            const delay = 10; // 300ms delay between searches
+            
+            // Disable the button and show progress
+            searchAllBtn.disabled = true;
+            searchAllBtn.innerHTML = '⏳ Opening searches...';
+            
+            let searchedCount = 0;
+            
+            // Function to search one player and schedule the next
+            function searchNextPlayer(index) {
+                if (index >= searchButtons.length) {
+                    // All done
+                    searchAllBtn.innerHTML = '✅ All searches opened!';
+                    setTimeout(() => {
+                        searchAllBtn.disabled = false;
+                        searchAllBtn.innerHTML = '🚀 Search All Players';
+                    }, 2000);
+                    return;
+                }
+                
+                // Click the search button
+                searchButtons[index].click();
+                searchedCount++;
+                
+                // Update progress
+                searchAllBtn.innerHTML = `⏳ Opening ${searchedCount}/${totalPlayers}...`;
+                
+                // Schedule next search
+                setTimeout(() => {
+                    searchNextPlayer(index + 1);
+                }, delay);
+            }
+            
+            // Warn user about pop-ups
+            const proceed = confirm(`This will open ${totalPlayers} search tabs with a ${delay}ms delay between each.\n\nYour browser may ask to allow pop-ups - please allow them.\n\nProceed?`);
+            
+            if (proceed) {
+                // Start the search process
+                searchNextPlayer(0);
+            } else {
+                // User cancelled
+                searchAllBtn.disabled = false;
+                searchAllBtn.innerHTML = '🚀 Search All Players';
             }
         }
 
