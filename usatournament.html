@@ -362,7 +362,7 @@
 
         async function loadFromWindow() {
             try {
-                const text = await window.fs.readFile('Chess Lions tournament_ August Responses  Form Responses 1.csv', { encoding: 'utf8' });
+                const text = await window.fs.readFile('Chess Lions Open Registration  September 2025 Responses  Form Responses 11.csv', { encoding: 'utf8' });
                 Papa.parse(text, {
                     header: true,
                     dynamicTyping: true,
@@ -428,12 +428,12 @@
             registrationData.forEach((row, index) => {
                 const playerName = (row['Players Name (Last name, First name)'] || '').trim().toLowerCase();
                 const email = (row['Email address (For contact)'] || '').trim().toLowerCase();
-                const uscfId = row['USCF ID '] || '';
+                const uscfId = row['USCF ID (ONLY if playing in a rated section, an 8 digit number, like "12892910" )'] || '';
                 
                 // Create keys for duplicate detection
                 const nameKey = playerName;
                 const emailKey = email;
-                const uscfKey = uscfId ? uscfId.toString() : '';
+                const uscfKey = uscfId ? Math.round(uscfId).toString() : '';
                 
                 let isDuplicate = false;
                 let duplicateType = [];
@@ -515,7 +515,7 @@
                     row['Players Name (Last name, First name)'] || '',
                     row['Email address (For contact)'] || '',
                     row['Parent\'s name (optional)'] || '',
-                    row['USCF ID '] ? row['USCF ID '].toString() : '',
+                    row['USCF ID (ONLY if playing in a rated section, an 8 digit number, like "12892910" )'] ? Math.round(row['USCF ID (ONLY if playing in a rated section, an 8 digit number, like "12892910" )']).toString() : '',
                     row['Phone number (optional)'] || '',
                     row.Timestamp || '',
                     row.section || ''
@@ -541,10 +541,10 @@
                 }
 
                 // USCF ID filter
-                if (uscfFilter === 'yes' && !row['USCF ID ']) {
+                if (uscfFilter === 'yes' && !row['USCF ID (ONLY if playing in a rated section, an 8 digit number, like "12892910" )']) {
                     return false;
                 }
-                if (uscfFilter === 'no' && row['USCF ID ']) {
+                if (uscfFilter === 'no' && row['USCF ID (ONLY if playing in a rated section, an 8 digit number, like "12892910" )']) {
                     return false;
                 }
 
@@ -566,7 +566,7 @@
 
         function updateStats() {
             const totalRegistrations = filteredData.length;
-            const withUSCF = filteredData.filter(row => row['USCF ID ']).length;
+            const withUSCF = filteredData.filter(row => row['USCF ID (ONLY if playing in a rated section, an 8 digit number, like "12892910" )']).length;
             const sections = [...new Set(filteredData.map(row => row.section).filter(Boolean))];
             const duplicateCount = filteredData.filter(row => row._isDuplicate).length;
             const paidCount = filteredData.filter(row => paymentStatus[row._originalIndex]).length;
@@ -659,7 +659,7 @@
                 'Players Name (Last name, First name)',
                 'Parent\'s name (optional)',
                 'Which section? Note: sections may be combined based upon entries.',
-                'USCF ID ',
+                'USCF ID (ONLY if playing in a rated section, an 8 digit number, like "12892910" )',
                 'Email address (For contact)',
                 'Phone number (optional)'
             ];
@@ -701,7 +701,11 @@
                 }
                 
                 headers.forEach(header => {
-                    const value = row[header] || '';
+                    let value = row[header] || '';
+                    // Format USCF ID to show full number if it exists
+                    if (header.includes('USCF ID') && value) {
+                        value = Math.round(value).toString(); // Convert float to integer string
+                    }
                     tableHtml += `<td>${value}</td>`;
                 });
                 tableHtml += '</tr>';
@@ -843,4 +847,3 @@
     </script>
 </body>
 </html>
-
