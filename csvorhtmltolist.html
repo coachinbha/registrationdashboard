@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Form Response Parser</title>
+    <title>Chess Registration Parser</title>
     <style>
         * {
             margin: 0;
@@ -124,6 +124,20 @@
             text-align: center;
             padding: 40px 20px;
         }
+        .debug-info {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            border-radius: 6px;
+            padding: 15px;
+            margin-bottom: 15px;
+            font-size: 12px;
+            font-family: monospace;
+        }
+        .debug-title {
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: #856404;
+        }
         table {
             width: 100%;
             border-collapse: collapse;
@@ -184,8 +198,8 @@
 </head>
 <body>
     <div class="container">
-        <h1>📊 Form Response Parser</h1>
-        <p class="subtitle">Extract email addresses and phone numbers from HTML form responses</p>
+        <h1>♟️ Chess Registration Parser</h1>
+        <p class="subtitle">Extract player information including USCF ID, email, and phone from registration forms</p>
         
         <div class="section">
             <div class="section-title">Upload File</div>
@@ -203,8 +217,8 @@
                     <div class="stat-label">Total Records</div>
                 </div>
                 <div class="stat-box">
-                    <div class="stat-number" id="emailCount">0</div>
-                    <div class="stat-label">With Email</div>
+                    <div class="stat-number" id="uscfCount">0</div>
+                    <div class="stat-label">With USCF ID</div>
                 </div>
                 <div class="stat-box">
                     <div class="stat-number" id="phoneCount">0</div>
@@ -214,6 +228,10 @@
         </div>
 
         <div class="section" id="previewSection" style="display: none;">
+            <div id="debugInfo" class="debug-info" style="display: none;">
+                <div class="debug-title">Column Detection:</div>
+                <div id="debugContent"></div>
+            </div>
             <div class="section-title">Data Preview</div>
             <div class="preview" id="preview"></div>
             <div class="controls">
@@ -263,21 +281,78 @@
             reader.readAsText(file);
         }
 
+        function findColumnIndex(headers, patterns) {
+            // Try each pattern in order of priority
+            for (const pattern of patterns) {
+                const index = headers.findIndex(h => {
+                    const headerLower = h.toLowerCase().trim();
+                    
+                    if (typeof pattern === 'string') {
+                        return headerLower.includes(pattern);
+                    } else if (pattern instanceof RegExp) {
+                        return pattern.test(headerLower);
+                    } else if (typeof pattern === 'function') {
+                        return pattern(headerLower);
+                    }
+                    return false;
+                });
+                
+                if (index !== -1) return index;
+            }
+            return -1;
+        }
+
         function parseHTML(html) {
             parsedData = [];
             const doc = new DOMParser().parseFromString(html, 'text/html');
             const rows = doc.querySelectorAll('table tr');
             
+            let nameIdx = -1, uscfIdx = -1, emailIdx = -1, phoneIdx = -1;
+            
+            if (rows.length > 0) {
+                const headerCells = rows[0].querySelectorAll('th, td');
+                const headers = Array.from(headerCells).map(cell => cell.textContent.trim());
+                
+                // Find columns using intelligent matching
+                nameIdx = findColumnIndex(headers, [
+                    h => h.includes('player') && h.includes('name'),
+                    'player name',
+                    'playername',
+                    h => h.includes('name') && !h.includes('parent')
+                ]);
+                
+                uscfIdx = findColumnIndex(headers, [
+                    'uscf id',
+                    'uscf',
+                    'uscfid',
+                    h => h.includes('uscf')
+                ]);
+                
+                emailIdx = findColumnIndex(headers, [
+                    'email address',
+                    'email',
+                    'e-mail'
+                ]);
+                
+                phoneIdx = findColumnIndex(headers, [
+                    'phone number',
+                    'phone',
+                    'mobile',
+                    'cell'
+                ]);
+            }
+            
             rows.forEach((row, idx) => {
-                if (idx === 0) return; // Skip header
+                if (idx === 0) return;
                 const cells = row.querySelectorAll('td');
-                if (cells.length >= 6) {
-                    const name = cells[1]?.textContent.trim() || '';
-                    const email = cells[5]?.textContent.trim() || '';
-                    const phone = cells[6]?.textContent.trim() || '';
+                if (cells.length > 0) {
+                    const name = nameIdx >= 0 ? cells[nameIdx]?.textContent.trim() || '' : '';
+                    const uscfId = uscfIdx >= 0 ? cells[uscfIdx]?.textContent.trim() || '' : '';
+                    const email = emailIdx >= 0 ? cells[emailIdx]?.textContent.trim() || '' : '';
+                    const phone = phoneIdx >= 0 ? cells[phoneIdx]?.textContent.trim() || '' : '';
                     
                     if (name) {
-                        parsedData.push({ name, email, phone });
+                        parsedData.push({ name, uscfId, email, phone });
                     }
                 }
             });
@@ -288,26 +363,107 @@
         function parseCSV(csv) {
             parsedData = [];
             const lines = csv.split('\n');
-            const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
             
-            const nameIdx = headers.findIndex(h => h.includes('name'));
-            const emailIdx = headers.findIndex(h => h.includes('email'));
-            const phoneIdx = headers.findIndex(h => h.includes('phone'));
+            const firstLine = lines[0];
+            const headers = parseCSVLine(firstLine).map(h => h.trim().toLowerCase());
             
+            // Show debug info
+            const debugInfo = document.getElementById('debugInfo');
+            const debugContent = document.getElementById('debugContent');
+            debugInfo.style.display = 'block';
+            
+            let debugText = 'Headers found:<br>';
+            headers.forEach((h, i) => {
+                debugText += `  [${i}] "${h}"<br>`;
+            });
+            
+            // Intelligent column detection with priority order
+            const nameIdx = findColumnIndex(headers, [
+                h => h.includes('player') && h.includes('name') && !h.includes('parent'),
+                h => h === "player's name" || h === 'player name',
+                'playername',
+                h => h.includes('name') && !h.includes('parent') && !h.includes('first') && !h.includes('last')
+            ]);
+            
+            const uscfIdx = findColumnIndex(headers, [
+                h => h.includes('uscf') && h.includes('id'),
+                'uscf id',
+                'uscfid',
+                'uscf',
+                h => h.includes('uscf')
+            ]);
+            
+            const emailIdx = findColumnIndex(headers, [
+                h => h.includes('email') && h.includes('address'),
+                'email address',
+                'email',
+                'e-mail',
+                h => h.includes('email')
+            ]);
+            
+            const phoneIdx = findColumnIndex(headers, [
+                h => h.includes('phone') && h.includes('number'),
+                'phone number',
+                'phone',
+                'mobile number',
+                'mobile',
+                'cell',
+                h => h.includes('phone') || h.includes('mobile') || h.includes('cell')
+            ]);
+            
+            debugText += '<br>Detected columns:<br>';
+            debugText += `  Player Name: ${nameIdx >= 0 ? '[' + nameIdx + '] "' + headers[nameIdx] + '"' : 'NOT FOUND'}<br>`;
+            debugText += `  USCF ID: ${uscfIdx >= 0 ? '[' + uscfIdx + '] "' + headers[uscfIdx] + '"' : 'NOT FOUND'}<br>`;
+            debugText += `  Email: ${emailIdx >= 0 ? '[' + emailIdx + '] "' + headers[emailIdx] + '"' : 'NOT FOUND'}<br>`;
+            debugText += `  Phone: ${phoneIdx >= 0 ? '[' + phoneIdx + '] "' + headers[phoneIdx] + '"' : 'NOT FOUND'}<br>`;
+            
+            debugContent.innerHTML = debugText;
+            
+            // Parse data rows
             for (let i = 1; i < lines.length; i++) {
-                if (!lines[i].trim()) continue;
+                const line = lines[i].trim();
+                if (!line) continue;
                 
-                const cells = lines[i].split(',').map(c => c.trim());
-                const name = nameIdx >= 0 ? cells[nameIdx] : '';
-                const email = emailIdx >= 0 ? cells[emailIdx] : '';
-                const phone = phoneIdx >= 0 ? cells[phoneIdx] : '';
+                const cells = parseCSVLine(line);
+                
+                const name = nameIdx >= 0 && cells[nameIdx] ? cells[nameIdx].trim() : '';
+                const uscfId = uscfIdx >= 0 && cells[uscfIdx] ? cells[uscfIdx].trim() : '';
+                const email = emailIdx >= 0 && cells[emailIdx] ? cells[emailIdx].trim() : '';
+                const phone = phoneIdx >= 0 && cells[phoneIdx] ? cells[phoneIdx].trim() : '';
                 
                 if (name) {
-                    parsedData.push({ name, email, phone });
+                    parsedData.push({ name, uscfId, email, phone });
                 }
             }
             
             displayResults();
+        }
+
+        function parseCSVLine(line) {
+            const result = [];
+            let current = '';
+            let inQuotes = false;
+            
+            for (let i = 0; i < line.length; i++) {
+                const char = line[i];
+                
+                if (char === '"') {
+                    if (inQuotes && line[i + 1] === '"') {
+                        current += '"';
+                        i++;
+                    } else {
+                        inQuotes = !inQuotes;
+                    }
+                } else if (char === ',' && !inQuotes) {
+                    result.push(current);
+                    current = '';
+                } else {
+                    current += char;
+                }
+            }
+            result.push(current);
+            
+            return result.map(cell => cell.replace(/^["']|["']$/g, '').trim());
         }
 
         function displayResults() {
@@ -316,17 +472,18 @@
                 return;
             }
 
-            const emailCount = parsedData.filter(d => d.email).length;
-            const phoneCount = parsedData.filter(d => d.phone).length;
+            const uscfCount = parsedData.filter(d => d.uscfId && d.uscfId !== '').length;
+            const phoneCount = parsedData.filter(d => d.phone && d.phone !== '').length;
 
             document.getElementById('totalCount').textContent = parsedData.length;
-            document.getElementById('emailCount').textContent = emailCount;
+            document.getElementById('uscfCount').textContent = uscfCount;
             document.getElementById('phoneCount').textContent = phoneCount;
 
-            let html = '<table><thead><tr><th>Name</th><th>Email</th><th>Phone</th></tr></thead><tbody>';
+            let html = '<table><thead><tr><th>Player Name</th><th>USCF ID</th><th>Email</th><th>Phone</th></tr></thead><tbody>';
             parsedData.forEach(item => {
                 html += `<tr>
                     <td>${escapeHtml(item.name)}</td>
+                    <td>${item.uscfId ? escapeHtml(item.uscfId) : '—'}</td>
                     <td>${item.email ? escapeHtml(item.email) : '—'}</td>
                     <td>${item.phone ? escapeHtml(item.phone) : '—'}</td>
                 </tr>`;
@@ -344,22 +501,22 @@
         }
 
         document.getElementById('exportText').addEventListener('click', () => {
-            let text = 'NAME | EMAIL | PHONE\n';
-            text += '—'.repeat(60) + '\n';
+            let text = 'PLAYER NAME | USCF ID | EMAIL | PHONE\n';
+            text += '—'.repeat(80) + '\n';
             parsedData.forEach(item => {
-                text += `${item.name} | ${item.email || '(none)'} | ${item.phone || '(none)'}\n`;
+                text += `${item.name} | ${item.uscfId || '(none)'} | ${item.email || '(none)'} | ${item.phone || '(none)'}\n`;
             });
             
-            downloadFile(text, 'form_data.txt', 'text/plain');
+            downloadFile(text, 'chess_registration_data.txt', 'text/plain');
         });
 
         document.getElementById('exportCSV').addEventListener('click', () => {
-            let csv = 'Name,Email,Phone\n';
+            let csv = 'Player Name,USCF ID,Email,Phone\n';
             parsedData.forEach(item => {
-                csv += `"${item.name}","${item.email}","${item.phone}"\n`;
+                csv += `"${item.name}","${item.uscfId}","${item.email}","${item.phone}"\n`;
             });
             
-            downloadFile(csv, 'form_data.csv', 'text/csv');
+            downloadFile(csv, 'chess_registration_data.csv', 'text/csv');
         });
 
         document.getElementById('clearBtn').addEventListener('click', () => {
@@ -368,6 +525,7 @@
             preview.innerHTML = '';
             previewSection.style.display = 'none';
             statsSection.style.display = 'none';
+            document.getElementById('debugInfo').style.display = 'none';
         });
 
         function downloadFile(content, filename, type) {
