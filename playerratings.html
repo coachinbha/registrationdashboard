@@ -524,7 +524,7 @@
                     return;
                 }
                 
-                searchUrl = `https://www.uschess.org/datapage/player-search.php?name=${encodeURIComponent(playerName)}&state=ANY&ratingmin=&ratingmax=&order=N&rating=R&mode=Find`;
+                searchUrl = `https://ratings.uschess.org/?fuzzy=${encodeURIComponent(playerName)}`;
             } else {
                 const uscfId = document.getElementById('uscfId').value.trim();
                 
@@ -534,14 +534,14 @@
                     return;
                 }
                 
-                searchUrl = `https://www.uschess.org/datapage/player-search.php?name=${encodeURIComponent(uscfId)}&state=ANY&ratingmin=&ratingmax=&order=N&rating=R&mode=Find`;
+                searchUrl = `https://ratings.uschess.org/player/${encodeURIComponent(uscfId)}`;
             }
             
             window.open(searchUrl, '_blank');
         }
 
         function openUSCFSearch() {
-            window.open('https://www.uschess.org/datapage/player-search.php?name=&state=ANY&ratingmin=&ratingmax=&order=N&rating=R&mode=Find', '_blank');
+            window.open('https://ratings.uschess.org/', '_blank');
         }
 
         // CSV handling functionality
@@ -716,7 +716,7 @@
                     console.log(`Player ${index + 1} USCF ID: "${uscfId}" (type: ${typeof player[playerColumns.id]})`);
                     
                     if (uscfId && uscfId !== '' && !isNaN(uscfId)) {
-                        searchUrl = `https://www.uschess.org/datapage/player-search.php?name=${encodeURIComponent(uscfId)}&state=ANY&ratingmin=&ratingmax=&order=N&rating=R&mode=Find`;
+                        searchUrl = `https://ratings.uschess.org/player/${encodeURIComponent(uscfId)}`;
                         console.log(`Using ID search for player ${index + 1}: ${searchUrl}`);
                     }
                 }
@@ -727,7 +727,7 @@
                     console.log(`Player ${index + 1} Name (fallback): "${playerName}"`);
                     
                     if (playerName && playerName !== '') {
-                        searchUrl = `https://www.uschess.org/datapage/player-search.php?name=${encodeURIComponent(playerName)}&state=ANY&ratingmin=&ratingmax=&order=N&rating=R&mode=Find`;
+                        searchUrl = `https://ratings.uschess.org/?fuzzy=${encodeURIComponent(playerName)}`;
                         console.log(`Using name search (fallback) for player ${index + 1}: ${searchUrl}`);
                     }
                 }
@@ -738,7 +738,7 @@
                     console.log(`Player ${index + 1} Name: "${playerName}"`);
                     
                     if (playerName && playerName !== '') {
-                        searchUrl = `https://www.uschess.org/datapage/player-search.php?name=${encodeURIComponent(playerName)}&state=ANY&ratingmin=&ratingmax=&order=N&rating=R&mode=Find`;
+                        searchUrl = `https://ratings.uschess.org/?fuzzy=${encodeURIComponent(playerName)}`;
                         console.log(`Using name search for player ${index + 1}: ${searchUrl}`);
                     }
                 }
@@ -761,7 +761,7 @@
             }
             
             const searchAllBtn = document.getElementById('searchAllBtn');
-            const delay = 10; // 300ms delay between searches
+            const delay = 10; // 10ms delay between searches
             
             // Disable the button and show progress
             searchAllBtn.disabled = true;
