@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Form Response Parser</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+            max-width: 900px;
+            width: 100%;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        .section {
+            margin-bottom: 30px;
+        }
+        .section-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #f0f0f0;
+            padding-bottom: 10px;
+        }
+        .upload-area {
+            border: 2px dashed #667eea;
+            border-radius: 8px;
+            padding: 30px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: #f9f7ff;
+        }
+        .upload-area:hover {
+            border-color: #764ba2;
+            background: #f5f0ff;
+        }
+        .upload-area.active {
+            border-color: #667eea;
+            background: #eeeaff;
+        }
+        #fileInput {
+            display: none;
+        }
+        .file-info {
+            color: #666;
+            margin-top: 10px;
+            font-size: 13px;
+        }
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+        .btn-primary:hover:not(:disabled) {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(102, 126, 234, 0.4);
+        }
+        .btn-primary:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #333;
+        }
+        .btn-secondary:hover:not(:disabled) {
+            background: #e0e0e0;
+        }
+        .preview {
+            background: #f9f9f9;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+            max-height: 300px;
+            overflow-y: auto;
+            font-size: 13px;
+            font-family: 'Courier New', monospace;
+        }
+        .preview-empty {
+            color: #999;
+            text-align: center;
+            padding: 40px 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+            font-size: 13px;
+        }
+        th, td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        th {
+            background: #f5f5f5;
+            font-weight: 600;
+            color: #333;
+        }
+        tr:hover {
+            background: #f9f9f9;
+        }
+        .status {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .status-success {
+            background: #d4edda;
+            color: #155724;
+        }
+        .status-error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        .stat-box {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .stat-number {
+            font-size: 28px;
+            font-weight: bold;
+        }
+        .stat-label {
+            font-size: 12px;
+            opacity: 0.9;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📊 Form Response Parser</h1>
+        <p class="subtitle">Extract email addresses and phone numbers from HTML form responses</p>
+        
+        <div class="section">
+            <div class="section-title">Upload File</div>
+            <div class="upload-area" id="uploadArea">
+                <div>📁 Click or drag HTML/CSV file here</div>
+                <div class="file-info">Supports .html, .csv files</div>
+            </div>
+            <input type="file" id="fileInput" accept=".html,.csv">
+        </div>
+
+        <div class="section" id="statsSection" style="display: none;">
+            <div class="stats">
+                <div class="stat-box">
+                    <div class="stat-number" id="totalCount">0</div>
+                    <div class="stat-label">Total Records</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-number" id="emailCount">0</div>
+                    <div class="stat-label">With Email</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-number" id="phoneCount">0</div>
+                    <div class="stat-label">With Phone</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section" id="previewSection" style="display: none;">
+            <div class="section-title">Data Preview</div>
+            <div class="preview" id="preview"></div>
+            <div class="controls">
+                <button class="btn-primary" id="exportText">📄 Export as Text</button>
+                <button class="btn-primary" id="exportCSV">📋 Export as CSV</button>
+                <button class="btn-secondary" id="clearBtn">Clear</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let parsedData = [];
+
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const preview = document.getElementById('preview');
+        const previewSection = document.getElementById('previewSection');
+        const statsSection = document.getElementById('statsSection');
+
+        uploadArea.addEventListener('click', () => fileInput.click());
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('active');
+        });
+        uploadArea.addEventListener('dragleave', () => uploadArea.classList.remove('active'));
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('active');
+            const files = e.dataTransfer.files;
+            if (files.length) handleFile(files[0]);
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length) handleFile(e.target.files[0]);
+        });
+
+        function handleFile(file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const content = e.target.result;
+                if (file.name.endsWith('.html')) {
+                    parseHTML(content);
+                } else if (file.name.endsWith('.csv')) {
+                    parseCSV(content);
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function parseHTML(html) {
+            parsedData = [];
+            const doc = new DOMParser().parseFromString(html, 'text/html');
+            const rows = doc.querySelectorAll('table tr');
+            
+            rows.forEach((row, idx) => {
+                if (idx === 0) return; // Skip header
+                const cells = row.querySelectorAll('td');
+                if (cells.length >= 6) {
+                    const name = cells[1]?.textContent.trim() || '';
+                    const email = cells[5]?.textContent.trim() || '';
+                    const phone = cells[6]?.textContent.trim() || '';
+                    
+                    if (name) {
+                        parsedData.push({ name, email, phone });
+                    }
+                }
+            });
+            
+            displayResults();
+        }
+
+        function parseCSV(csv) {
+            parsedData = [];
+            const lines = csv.split('\n');
+            const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+            
+            const nameIdx = headers.findIndex(h => h.includes('name'));
+            const emailIdx = headers.findIndex(h => h.includes('email'));
+            const phoneIdx = headers.findIndex(h => h.includes('phone'));
+            
+            for (let i = 1; i < lines.length; i++) {
+                if (!lines[i].trim()) continue;
+                
+                const cells = lines[i].split(',').map(c => c.trim());
+                const name = nameIdx >= 0 ? cells[nameIdx] : '';
+                const email = emailIdx >= 0 ? cells[emailIdx] : '';
+                const phone = phoneIdx >= 0 ? cells[phoneIdx] : '';
+                
+                if (name) {
+                    parsedData.push({ name, email, phone });
+                }
+            }
+            
+            displayResults();
+        }
+
+        function displayResults() {
+            if (!parsedData.length) {
+                preview.innerHTML = '<div class="preview-empty">No data found</div>';
+                return;
+            }
+
+            const emailCount = parsedData.filter(d => d.email).length;
+            const phoneCount = parsedData.filter(d => d.phone).length;
+
+            document.getElementById('totalCount').textContent = parsedData.length;
+            document.getElementById('emailCount').textContent = emailCount;
+            document.getElementById('phoneCount').textContent = phoneCount;
+
+            let html = '<table><thead><tr><th>Name</th><th>Email</th><th>Phone</th></tr></thead><tbody>';
+            parsedData.forEach(item => {
+                html += `<tr>
+                    <td>${escapeHtml(item.name)}</td>
+                    <td>${item.email ? escapeHtml(item.email) : '—'}</td>
+                    <td>${item.phone ? escapeHtml(item.phone) : '—'}</td>
+                </tr>`;
+            });
+            html += '</tbody></table>';
+            
+            preview.innerHTML = html;
+            previewSection.style.display = 'block';
+            statsSection.style.display = 'block';
+        }
+
+        function escapeHtml(text) {
+            const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+            return text.replace(/[&<>"']/g, m => map[m]);
+        }
+
+        document.getElementById('exportText').addEventListener('click', () => {
+            let text = 'NAME | EMAIL | PHONE\n';
+            text += '—'.repeat(60) + '\n';
+            parsedData.forEach(item => {
+                text += `${item.name} | ${item.email || '(none)'} | ${item.phone || '(none)'}\n`;
+            });
+            
+            downloadFile(text, 'form_data.txt', 'text/plain');
+        });
+
+        document.getElementById('exportCSV').addEventListener('click', () => {
+            let csv = 'Name,Email,Phone\n';
+            parsedData.forEach(item => {
+                csv += `"${item.name}","${item.email}","${item.phone}"\n`;
+            });
+            
+            downloadFile(csv, 'form_data.csv', 'text/csv');
+        });
+
+        document.getElementById('clearBtn').addEventListener('click', () => {
+            parsedData = [];
+            fileInput.value = '';
+            preview.innerHTML = '';
+            previewSection.style.display = 'none';
+            statsSection.style.display = 'none';
+        });
+
+        function downloadFile(content, filename, type) {
+            const blob = new Blob([content], { type });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+    </script>
+</body>
+</html>
