@@ -422,6 +422,10 @@
                         <input type="radio" id="bulkByName" name="bulkSearchType" value="name">
                         <label for="bulkByName">Search by Player Name</label>
                     </div>
+                    <div class="radio-option">
+                        <input type="radio" id="bulkByIdOnly" name="bulkSearchType" value="idonly">
+                        <label for="bulkByIdOnly">Only players with USCF IDs</label>
+                    </div>
                 </div>
             </div>
             
@@ -453,6 +457,7 @@
             • Upload a CSV file with player data<br>
             • CSV should have columns for player names and/or USCF IDs<br>
             • Common formats: "Players Name (Last name, First name)", "USCF ID", etc.<br>
+            • Choose search mode: ID (with fallback), Name only, or ID-only (skips players without IDs)<br>
             • Click individual "Search" buttons to look up each player<br>
             • <em>Much more browser-friendly than opening all tabs at once!</em>
         </div>
@@ -596,8 +601,14 @@
             // Show players list
             displayPlayersList();
             
-            // Show bulk search mode options
-            document.getElementById('bulkSearchMode').style.display = 'block';
+            // Show bulk search mode options and add event listener
+            const bulkSearchMode = document.getElementById('bulkSearchMode');
+            bulkSearchMode.style.display = 'block';
+            
+            // Add event listeners to radio buttons to update the display
+            document.querySelectorAll('input[name="bulkSearchType"]').forEach(radio => {
+                radio.addEventListener('change', displayPlayersList);
+            });
             
             // Update status
             document.getElementById('fileStatus').innerHTML = 
@@ -661,15 +672,35 @@
             const summaryText = document.getElementById('csvSummaryText');
             const summaryColumns = document.getElementById('csvSummaryColumns');
             
+            // Get current search mode
+            const searchMode = document.querySelector('input[name="bulkSearchType"]:checked')?.value || 'id';
+            
+            // Filter players based on search mode
+            let playersToDisplay = csvData;
+            if (searchMode === 'idonly') {
+                playersToDisplay = csvData.filter(player => {
+                    if (!playerColumns.id) return false;
+                    const uscfId = String(player[playerColumns.id] || '').trim();
+                    return uscfId && uscfId !== '' && !isNaN(uscfId);
+                });
+            }
+            
+            // Count players with IDs
+            const playersWithIds = csvData.filter(player => {
+                if (!playerColumns.id) return false;
+                const uscfId = String(player[playerColumns.id] || '').trim();
+                return uscfId && uscfId !== '' && !isNaN(uscfId);
+            }).length;
+            
             // Update summary
-            summaryText.textContent = `${csvData.length} players loaded`;
+            summaryText.textContent = `${playersToDisplay.length} players ${searchMode === 'idonly' ? 'with IDs' : 'loaded'} (${playersWithIds} total with IDs)`;
             summaryColumns.textContent = `Using columns: Name: ${playerColumns.name || 'Not found'}, USCF ID: ${playerColumns.id || 'Not found'}`;
             
             // Clear previous content
             playersList.innerHTML = '';
             
             // Add each player
-            csvData.forEach((player, index) => {
+            playersToDisplay.forEach((player, index) => {
                 const playerDiv = document.createElement('div');
                 playerDiv.className = 'player-row';
                 
@@ -692,7 +723,7 @@
                 const searchBtn = document.createElement('button');
                 searchBtn.className = 'search-btn';
                 searchBtn.textContent = '🔍 Search';
-                searchBtn.onclick = () => searchIndividualPlayer(player, index);
+                searchBtn.onclick = () => searchIndividualPlayer(player, csvData.indexOf(player));
                 
                 playerDiv.appendChild(playerInfo);
                 playerDiv.appendChild(searchBtn);
@@ -709,7 +740,7 @@
             
             console.log(`Searching player ${index + 1}:`, player);
             
-            if (searchMode === 'id') {
+            if (searchMode === 'id' || searchMode === 'idonly') {
                 // Try to search by USCF ID first if available
                 if (playerColumns.id && player[playerColumns.id] !== undefined && player[playerColumns.id] !== null) {
                     const uscfId = String(player[playerColumns.id]).trim();
@@ -721,8 +752,8 @@
                     }
                 }
                 
-                // If no ID available, fall back to name search
-                if (!searchUrl && playerColumns.name && player[playerColumns.name]) {
+                // If no ID available and not in "idonly" mode, fall back to name search
+                if (!searchUrl && searchMode !== 'idonly' && playerColumns.name && player[playerColumns.name]) {
                     const playerName = String(player[playerColumns.name]).trim();
                     console.log(`Player ${index + 1} Name (fallback): "${playerName}"`);
                     
