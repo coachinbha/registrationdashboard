@@ -26,15 +26,13 @@
             color: var(--text-color);
             line-height: 1.4;
             min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
             padding: 2rem;
         }
 
         .container {
             width: 100%;
-            max-width: 600px;
+            max-width: 1400px;
+            margin: 0 auto;
             padding: 3rem;
             border: 2px solid var(--border-color);
         }
@@ -55,6 +53,45 @@
             letter-spacing: 1px;
         }
 
+        .tabs {
+            display: flex;
+            gap: 0;
+            margin-bottom: 3rem;
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        .tab {
+            padding: 1rem 2rem;
+            background: none;
+            border: none;
+            border-bottom: 3px solid transparent;
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 700;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: -2px;
+            color: var(--text-color);
+        }
+
+        .tab:hover {
+            background-color: #f8f8f8;
+        }
+
+        .tab.active {
+            border-bottom-color: var(--border-color);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
         .input-group {
             margin-bottom: 2rem;
         }
@@ -68,7 +105,7 @@
             font-size: 0.9rem;
         }
 
-        input {
+        input[type="text"] {
             width: 100%;
             padding: 1rem;
             border: 2px solid var(--border-color);
@@ -79,8 +116,24 @@
             transition: all 0.3s ease;
         }
 
-        input:focus {
+        input[type="text"]:focus {
             outline: none;
+            background-color: #f8f8f8;
+        }
+
+        input[type="file"] {
+            width: 100%;
+            padding: 1rem;
+            border: 2px dashed var(--border-color);
+            background-color: var(--bg-color);
+            font-family: 'Montserrat', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 400;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        input[type="file"]:hover {
             background-color: #f8f8f8;
         }
 
@@ -169,13 +222,15 @@
         }
 
         .status-active {
-            background-color: var(--text-color);
-            color: var(--bg-color);
+            background-color: #28a745;
+            color: white;
+            border-color: #28a745;
         }
 
         .status-inactive {
-            background-color: var(--bg-color);
-            color: var(--text-color);
+            background-color: #dc3545;
+            color: white;
+            border-color: #dc3545;
         }
 
         .ratings-section {
@@ -236,6 +291,97 @@
             to { transform: rotate(360deg); }
         }
 
+        .bulk-results {
+            margin-top: 3rem;
+        }
+
+        .stats-bar {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            border: 2px solid var(--border-color);
+            padding: 1.5rem;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: 900;
+            letter-spacing: -1px;
+        }
+
+        .stat-label {
+            font-size: 0.85rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 0.5rem;
+        }
+
+        .results-table {
+            width: 100%;
+            border-collapse: collapse;
+            border: 2px solid var(--border-color);
+        }
+
+        .results-table th {
+            background-color: var(--text-color);
+            color: var(--bg-color);
+            padding: 1rem;
+            text-align: left;
+            font-weight: 700;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            letter-spacing: 1px;
+            border: 1px solid var(--border-color);
+        }
+
+        .results-table td {
+            padding: 1rem;
+            border: 1px solid var(--border-color);
+            font-size: 0.9rem;
+        }
+
+        .results-table tbody tr:nth-child(even) {
+            background-color: #f8f8f8;
+        }
+
+        .results-table tbody tr:hover {
+            background-color: #f0f0f0;
+        }
+
+        .error-cell {
+            color: #999;
+            font-style: italic;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background-color: #f0f0f0;
+            border: 1px solid var(--border-color);
+            margin-bottom: 1rem;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background-color: var(--text-color);
+            transition: width 0.3s ease;
+        }
+
+        .progress-text {
+            font-size: 0.85rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 0.5rem;
+        }
+
         @media (max-width: 768px) {
             .container {
                 padding: 2rem;
@@ -247,6 +393,20 @@
 
             .subtitle {
                 font-size: 0.85rem;
+            }
+
+            .tabs {
+                flex-direction: column;
+            }
+
+            .tab {
+                border-bottom: none;
+                border-left: 3px solid transparent;
+            }
+
+            .tab.active {
+                border-left-color: var(--border-color);
+                border-bottom-color: transparent;
             }
 
             .info-row {
@@ -261,30 +421,90 @@
             .rating-value {
                 font-size: 2rem;
             }
+
+            .results-table {
+                font-size: 0.8rem;
+            }
+
+            .results-table th,
+            .results-table td {
+                padding: 0.5rem;
+            }
+
+            .stat-value {
+                font-size: 2rem;
+            }
         }
     </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
 </head>
 <body>
     <div class="container">
         <h1>USCF ID Verifier</h1>
         <p class="subtitle">US Chess Federation Member Verification</p>
 
-        <div class="input-group">
-            <label for="uscfId">USCF ID Number</label>
-            <input 
-                type="text" 
-                id="uscfId" 
-                placeholder="Enter 6-8 digit ID" 
-                maxlength="8"
-            />
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('single')">Single ID</button>
+            <button class="tab" onclick="switchTab('bulk')">Bulk Upload</button>
         </div>
 
-        <button id="verifyBtn" onclick="verifyUSCF()">Verify Member</button>
+        <!-- Single ID Tab -->
+        <div id="single-tab" class="tab-content active">
+            <div class="input-group">
+                <label for="uscfId">USCF ID Number</label>
+                <input 
+                    type="text" 
+                    id="uscfId" 
+                    placeholder="Enter 6-8 digit ID" 
+                    maxlength="8"
+                />
+            </div>
 
-        <div id="result" class="result"></div>
+            <button id="verifyBtn" onclick="verifyUSCF()">Verify Member</button>
+
+            <div id="result" class="result"></div>
+        </div>
+
+        <!-- Bulk Upload Tab -->
+        <div id="bulk-tab" class="tab-content">
+            <div class="input-group">
+                <label for="csvFile">Upload CSV File</label>
+                <input 
+                    type="file" 
+                    id="csvFile" 
+                    accept=".csv"
+                    onchange="handleFileUpload(event)"
+                />
+            </div>
+
+            <button id="bulkVerifyBtn" onclick="verifyBulk()" disabled>Verify All Players</button>
+
+            <div id="bulkProgress" style="display: none; margin-top: 2rem;">
+                <p class="progress-text">Processing...</p>
+                <div class="progress-bar">
+                    <div id="progressFill" class="progress-fill" style="width: 0%"></div>
+                </div>
+            </div>
+
+            <div id="bulkResults" class="bulk-results"></div>
+        </div>
     </div>
 
     <script>
+        let csvData = null;
+
+        function switchTab(tab) {
+            const tabs = document.querySelectorAll('.tab');
+            const contents = document.querySelectorAll('.tab-content');
+            
+            tabs.forEach(t => t.classList.remove('active'));
+            contents.forEach(c => c.classList.remove('active'));
+            
+            event.target.classList.add('active');
+            document.getElementById(`${tab}-tab`).classList.add('active');
+        }
+
+        // Single ID Verification
         const input = document.getElementById('uscfId');
         const resultDiv = document.getElementById('result');
         const verifyBtn = document.getElementById('verifyBtn');
@@ -317,21 +537,8 @@
             resultDiv.style.display = 'none';
 
             try {
-                const proxyUrl = 'https://api.allorigins.win/raw?url=';
-                const apiUrl = `https://ratings-api.uschess.org/api/v1/members/${uscfId}`;
-                
-                const response = await fetch(proxyUrl + encodeURIComponent(apiUrl));
-
-                if (!response.ok) {
-                    if (response.status === 404) {
-                        throw new Error('USCF ID not found');
-                    }
-                    throw new Error(`API error: ${response.status}`);
-                }
-
-                const data = await response.json();
+                const data = await fetchUSCFData(uscfId);
                 showSuccess(data);
-
             } catch (error) {
                 showError(error.message || 'Failed to verify ID. Please try again.');
             } finally {
@@ -340,8 +547,32 @@
             }
         }
 
+        async function fetchUSCFData(uscfId) {
+            const proxyUrl = 'https://api.allorigins.win/raw?url=';
+            const apiUrl = `https://ratings-api.uschess.org/api/v1/members/${uscfId}`;
+            
+            const response = await fetch(proxyUrl + encodeURIComponent(apiUrl));
+
+            if (!response.ok) {
+                if (response.status === 404) {
+                    throw new Error('USCF ID not found');
+                }
+                throw new Error(`API error: ${response.status}`);
+            }
+
+            return await response.json();
+        }
+
+        function isExpired(expirationDate) {
+            if (!expirationDate) return false;
+            const expDate = new Date(expirationDate);
+            const today = new Date();
+            return expDate < today;
+        }
+
         function showSuccess(data) {
             const isActive = data.status === 'Active';
+            const expired = isExpired(data.expirationDate);
             const statusClass = isActive ? 'status-active' : 'status-inactive';
             
             const ratings = data.ratings.filter(r => r.rating);
@@ -371,13 +602,11 @@
                 ratingsHTML += '</div>';
             }
 
+            const headingText = expired ? 'Expired Membership' : `${data.firstName} ${data.lastName}`;
+
             resultDiv.className = 'result success';
             resultDiv.innerHTML = `
-                <h2>Valid Member</h2>
-                <div class="info-row">
-                    <span class="info-label">Name</span>
-                    <span class="info-value">${data.firstName} ${data.lastName}</span>
-                </div>
+                <h2>${headingText}</h2>
                 <div class="info-row">
                     <span class="info-label">ID</span>
                     <span class="info-value">${data.id}</span>
@@ -406,6 +635,228 @@
                 <p>${message}</p>
             `;
             resultDiv.style.display = 'block';
+        }
+
+        // Bulk Upload Functions
+        function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            Papa.parse(file, {
+                header: true,
+                skipEmptyLines: true,
+                complete: function(results) {
+                    csvData = results.data;
+                    document.getElementById('bulkVerifyBtn').disabled = false;
+                    console.log('CSV loaded:', csvData.length, 'rows');
+                },
+                error: function(error) {
+                    alert('Error parsing CSV: ' + error.message);
+                }
+            });
+        }
+
+        async function verifyBulk() {
+            if (!csvData || csvData.length === 0) {
+                alert('Please upload a CSV file first');
+                return;
+            }
+
+            const bulkVerifyBtn = document.getElementById('bulkVerifyBtn');
+            const progressDiv = document.getElementById('bulkProgress');
+            const progressFill = document.getElementById('progressFill');
+            const resultsDiv = document.getElementById('bulkResults');
+
+            bulkVerifyBtn.disabled = true;
+            bulkVerifyBtn.innerHTML = '<span class="loader"></span>Processing...';
+            progressDiv.style.display = 'block';
+            resultsDiv.innerHTML = '';
+
+            const results = [];
+            let validCount = 0;
+            let errorCount = 0;
+            let skippedCount = 0;
+
+            // Filter out rows without USCF IDs first
+            const playersWithIds = csvData.filter(row => {
+                const id = extractUSCFId(row);
+                return id !== null;
+            });
+
+            // Track players without IDs separately
+            const playersWithoutIds = csvData.filter(row => {
+                const id = extractUSCFId(row);
+                return id === null;
+            });
+
+            console.log(`Processing ${playersWithIds.length} players with USCF IDs`);
+            console.log(`Skipping ${playersWithoutIds.length} players without USCF IDs`);
+
+            for (let i = 0; i < playersWithIds.length; i++) {
+                const row = playersWithIds[i];
+                const uscfId = extractUSCFId(row);
+                
+                const progress = ((i + 1) / playersWithIds.length) * 100;
+                progressFill.style.width = progress + '%';
+
+                let success = false;
+                let attempts = 0;
+                const maxAttempts = 3;
+
+                while (!success && attempts < maxAttempts) {
+                    attempts++;
+                    try {
+                        const data = await fetchUSCFDataWithRetry(uscfId);
+                        results.push({
+                            name: `${data.firstName} ${data.lastName}`,
+                            uscfId: data.id,
+                            status: data.status,
+                            expiration: data.expirationDate,
+                            state: data.stateRep,
+                            regular: getRating(data.ratings, 'R'),
+                            quick: getRating(data.ratings, 'Q'),
+                            blitz: getRating(data.ratings, 'B'),
+                            data: data
+                        });
+                        validCount++;
+                        success = true;
+                    } catch (error) {
+                        if (attempts >= maxAttempts) {
+                            results.push({
+                                name: row["Players Name (Last name, First name)"] || 'N/A',
+                                uscfId: uscfId,
+                                status: 'error',
+                                error: error.message
+                            });
+                            errorCount++;
+                        } else {
+                            console.log(`Retry ${attempts} for ID ${uscfId}`);
+                            await new Promise(resolve => setTimeout(resolve, 1000));
+                        }
+                    }
+                }
+
+                // Rate limiting between successful requests
+                if (success) {
+                    await new Promise(resolve => setTimeout(resolve, 800));
+                }
+            }
+
+            // Add skipped players to results
+            playersWithoutIds.forEach(row => {
+                results.push({
+                    name: row["Players Name (Last name, First name)"] || 'N/A',
+                    uscfId: 'Not Provided',
+                    status: 'skipped',
+                    error: 'No USCF ID in registration'
+                });
+                skippedCount++;
+            });
+
+            displayBulkResults(results, validCount, errorCount, skippedCount);
+            
+            bulkVerifyBtn.disabled = false;
+            bulkVerifyBtn.innerHTML = 'Verify All Players';
+            progressDiv.style.display = 'none';
+        }
+
+        async function fetchUSCFDataWithRetry(uscfId, retries = 3) {
+            for (let i = 0; i < retries; i++) {
+                try {
+                    const data = await fetchUSCFData(uscfId);
+                    if (data && data.id) {
+                        return data;
+                    }
+                } catch (error) {
+                    if (i === retries - 1) throw error;
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                }
+            }
+            throw new Error('Failed to fetch data after retries');
+        }
+
+        function extractUSCFId(row) {
+            const uscfField = row["USCF ID (ONLY if playing in a rated section, an 8 digit number, like \"12892910\" )"];
+            if (!uscfField) return null;
+            
+            const cleaned = String(uscfField).replace(/\D/g, '');
+            return cleaned.length >= 6 && cleaned.length <= 8 ? cleaned : null;
+        }
+
+        function getRating(ratings, type) {
+            const rating = ratings.find(r => r.ratingSystem === type);
+            return rating && rating.rating ? rating.rating : '-';
+        }
+
+        function displayBulkResults(results, validCount, errorCount, skippedCount) {
+            const resultsDiv = document.getElementById('bulkResults');
+            
+            let html = `
+                <div class="stats-bar">
+                    <div class="stat-card">
+                        <div class="stat-value">${results.length}</div>
+                        <div class="stat-label">Total Players</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">${validCount}</div>
+                        <div class="stat-label">Verified</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">${errorCount}</div>
+                        <div class="stat-label">Errors</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">${skippedCount}</div>
+                        <div class="stat-label">No ID</div>
+                    </div>
+                </div>
+
+                <table class="results-table">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>USCF ID</th>
+                            <th>Status</th>
+                            <th>Expiration</th>
+                            <th>Regular</th>
+                            <th>Quick</th>
+                            <th>Blitz</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            results.forEach(player => {
+                if (player.status === 'error' || player.status === 'skipped') {
+                    html += `
+                        <tr>
+                            <td>${player.name}</td>
+                            <td>${player.uscfId}</td>
+                            <td colspan="5" class="error-cell">${player.error}</td>
+                        </tr>
+                    `;
+                } else {
+                    const statusClass = player.status === 'Active' ? 'status-active' : 'status-inactive';
+                    html += `
+                        <tr>
+                            <td>${player.name}</td>
+                            <td>${player.uscfId}</td>
+                            <td><span class="status-badge ${statusClass}">${player.status}</span></td>
+                            <td>${player.expiration}</td>
+                            <td>${player.regular}</td>
+                            <td>${player.quick}</td>
+                            <td>${player.blitz}</td>
+                        </tr>
+                    `;
+                }
+            });
+
+            html += `
+                    </tbody>
+                </table>
+            `;
+
+            resultsDiv.innerHTML = html;
         }
     </script>
 </body>
